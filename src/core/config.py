@@ -20,6 +20,25 @@ class ScheduleFileConfig(BaseModel):
     final_schedule: str = "schedule.json"  # Финальный файл расписания
 
 
+class LoggerConfig(BaseModel):
+    """Настройки логирования"""
+
+    level: str
+    format: str
+
+
+class BotConfig(BaseModel):
+    """Настройки телеграм бота"""
+
+    token: str
+
+
+class RedisConfig(BaseModel):
+    """Настройки редиса"""
+
+    url: str
+
+
 class Settings(BaseSettings):
     """Основной класс с настройками всего приложения"""
 
@@ -31,9 +50,10 @@ class Settings(BaseSettings):
     )
 
     zgy: ZgySiteConfig
+    log: LoggerConfig
+    bot: BotConfig
+    redis: RedisConfig
     schedule: ScheduleFileConfig = ScheduleFileConfig()
 
 
 settings = Settings()
-
-# print(f"{BASE_DIR}{settings.schedule.path}ГТФ-21.xlsx")
