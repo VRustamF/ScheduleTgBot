@@ -33,7 +33,7 @@ logs/
 # =========================
 # Environment variables / secrets
 # =========================
-.env
+src/.env
 .env.*
 config.yaml
 secrets.yaml
