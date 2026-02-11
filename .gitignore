@@ -1,0 +1,68 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# =========================
+# IDE / Editors
+# =========================
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# Environment variables / secrets
+# =========================
+.env
+.env.*
+config.yaml
+secrets.yaml
+
+# =========================
+# Downloads / temp files
+# =========================
+*.xls
+*.xlsx
+*.csv
+tmp/
+downloads/
+
+# =========================
+# Telegram bot runtime
+# =========================
+*.session
+*.session-journal
+
+# =========================
+# Tests / coverage
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =========================
+# Build / distribution
+# =========================
+build/
+dist/
+*.egg-info/
