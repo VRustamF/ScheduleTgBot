@@ -13,10 +13,11 @@ class ZgySiteConfig(BaseModel):
     url: str
 
 class ScheduleFileConfig(BaseModel):
-    """Настройки исходного файла с расписанием"""
+    """Настройки файлов с расписанием"""
 
-    file_name: str = "schedule.xls"
-    path: str = "/data/files/"
+    file_name: str = "schedule.xls" #
+    path: str = "/data/files/" # Путь к файлам расписания
+    final_schedule: str = "schedule.json" # Финальный файл расписания
 
 
 class Settings(BaseSettings):

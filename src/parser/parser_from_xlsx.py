@@ -12,7 +12,7 @@ from data import settings, BASE_DIR
 FILES_PATH = f"{BASE_DIR}{settings.schedule.path}"
 
 for filename in os.listdir(FILES_PATH):
-    if filename == settings.schedule.file_name:
+    if filename == settings.schedule.file_name or filename.endswith(".json"):
         continue
 
     wb = op.load_workbook(f"{FILES_PATH}{filename}", data_only=True)
@@ -48,7 +48,7 @@ for filename in os.listdir(FILES_PATH):
             if cell_val[1:].isupper():
                 group = cell_val
                 new_weekly_schedule = WeeklySchedules(group_name=group)
-                add_schedule(schedule=new_weekly_schedule)
+                add_schedule(schedule=new_weekly_schedule, faculty=filename[:-5])
                 groups_columns[col] = group
                 continue
             elif cell_val.lower() == 'время':
@@ -74,7 +74,7 @@ for filename in os.listdir(FILES_PATH):
                 elif col in groups_columns.keys() and cell_val != get_merged_value(ws=sheet, row=row-1, col=col):
 
                     if current_day not in added_day_in_groups[groups_columns[col]]:
-                        add_day(day_name=current_day, group_name=groups_columns[col])
+                        add_day(day_name=current_day, group_name=groups_columns[col], faculty=filename[:-5])
                         added_day_in_groups[groups_columns[col]].append(current_day)
 
                     cleaned_val = re.sub(r'\s+', ' ', cell_val).strip()
@@ -86,7 +86,8 @@ for filename in os.listdir(FILES_PATH):
                             time=current_time),
                         group_name=groups_columns[col],
                         day_name=current_day,
+                        faculty=filename[:-5],
                     )
 
-with open(f"{FILES_PATH}test.json", "w", encoding="utf-8") as f:
+with open(f"{FILES_PATH}{settings.schedule.final_schedule}", "w", encoding="utf-8") as f:
     f.write(BASE_SCHEDULE.model_dump_json(indent=4, ensure_ascii=False))

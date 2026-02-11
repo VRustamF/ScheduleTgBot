@@ -1,11 +1,10 @@
 import aiohttp
-# import asyncio
 
 from data import settings, BASE_DIR
 
 URL = settings.zgy.url
 
-async def schedule_downloader():
+async def schedule_downloader() -> None:
     """Функция, которая парсит расписание по чанкам с сайта згу"""
 
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
@@ -15,11 +14,3 @@ async def schedule_downloader():
             with open(f"{BASE_DIR}{settings.schedule.path}{settings.schedule.file_name}", "wb") as f:
                 async for chunk in response.content.iter_chunked(8192):
                     f.write(chunk)
-
-
-# async def main():
-#     await schedule_downloader()
-#
-#
-# if __name__ == '__main__':
-#     asyncio.run(main())
