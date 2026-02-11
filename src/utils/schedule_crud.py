@@ -1,4 +1,4 @@
-from data.db import BASE_SCHEDULE, Subjects, DailySchedules, WeeklySchedules
+from core.db import BASE_SCHEDULE, Subjects, DailySchedules, WeeklySchedules
 
 
 def add_subject(

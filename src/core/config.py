@@ -3,7 +3,6 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 BASE_DIR = Path(__file__).resolve().parents[1]
 
 
@@ -12,12 +11,13 @@ class ZgySiteConfig(BaseModel):
 
     url: str
 
+
 class ScheduleFileConfig(BaseModel):
     """Настройки файлов с расписанием"""
 
-    file_name: str = "schedule.xls" #
-    path: str = "/data/files/" # Путь к файлам расписания
-    final_schedule: str = "schedule.json" # Финальный файл расписания
+    file_name: str = "schedule.xls"  #
+    path: str = "/files/"  # Путь к файлам расписания
+    final_schedule: str = "schedule.json"  # Финальный файл расписания
 
 
 class Settings(BaseSettings):

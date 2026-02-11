@@ -4,8 +4,7 @@ from xlrd import Book
 import openpyxl
 from openpyxl import Workbook
 
-from data import settings, BASE_DIR
-
+from core import settings, BASE_DIR
 
 FILES_PATH = f"{BASE_DIR}{settings.schedule.path}"
 
@@ -38,7 +37,7 @@ def copy_merge_cells_to_xlsx(s_name: str, book: Book) -> Workbook:
             start_row=new_r1 - 7 + 1,
             end_row=new_r2 - 7,
             start_column=c1 + 1,
-            end_column=c2
+            end_column=c2,
         )
     return wb
 
@@ -51,8 +50,7 @@ def formatter() -> None:
 
     # читаем xls
     book = xlrd.open_workbook(
-        filename=f"{FILES_PATH}{settings.schedule.file_name}",
-        formatting_info=True
+        filename=f"{FILES_PATH}{settings.schedule.file_name}", formatting_info=True
     )
     sheet_names = book.sheet_names()
 
