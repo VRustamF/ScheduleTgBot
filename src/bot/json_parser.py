@@ -13,18 +13,20 @@ def get_today() -> int:
     return now.weekday()
 
 
-def week_parity() -> str:
+def week_parity() -> int:
     """Функция, которая определяет четность недели"""
 
     today = datetime.now()
     week_number = today.isocalendar().week
 
-    return LEXICON_PARITY[week_number % 2]
+    return week_number % 2
 
 
 def schedule_parser(
     faculty: str,
     current_group: str,
+    current_day: int | None = None,
+    current_parity: int | None = None,
 ) -> dict:
     """Функция, которая берет из json файла расписание на день"""
 
@@ -34,9 +36,14 @@ def schedule_parser(
     ) as f:
         data = json.load(f)
 
-    today_count = get_today()
+    today_count = get_today() if current_day is None else current_day
     today = LEXICON_DAYS_RU[today_count]
-    parity = week_parity()
+
+    if current_parity is None:
+        parity_count = week_parity()
+    else:
+        parity_count = week_parity() - 1 if current_parity == 1 else week_parity()
+    parity = LEXICON_PARITY[parity_count]
 
     subjects = {}
     count = 1
@@ -68,10 +75,17 @@ def schedule_parser(
 def send_schedule(
     faculty: str,
     current_group: str,
+    current_day: int | None = None,
+    current_parity: int | None = None,
 ) -> str:
     """Функция, которая отправляет готовое расписание на день"""
 
-    today_schedule: dict = schedule_parser(faculty=faculty, current_group=current_group)
+    today_schedule: dict = schedule_parser(
+        faculty=faculty,
+        current_group=current_group,
+        current_day=current_day,
+        current_parity=current_parity,
+    )
     schedule_text = ""
 
     for i, subject in today_schedule.items():

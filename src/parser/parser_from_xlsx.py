@@ -98,7 +98,7 @@ def parser() -> None:
                             )
                             added_day_in_groups[group_col].append(current_day)
 
-                        aud = ""
+                        aud = "Не указано"
                         for aud_col in aud_list:
                             if col < aud_col:
                                 aud = sheet.cell(row=row, column=aud_col).value
@@ -106,7 +106,7 @@ def parser() -> None:
                         add_subject(
                             subject=Subjects(
                                 subject_name=cleaned_val,
-                                audience=aud,
+                                audience=aud if aud else "Не указано",
                                 time=current_time,
                             ),
                             group_name=group_col,

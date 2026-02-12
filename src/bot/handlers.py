@@ -7,8 +7,13 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
 from bot.json_parser import send_schedule, get_today, week_parity
-from bot.utils import create_faculties_kb, create_groups_kb
-from bot.lexicon import LEXICON_INLINE_KEYBOARDS_TYPES, LEXICON, LEXICON_DAYS_RU
+from bot.utils import create_faculties_kb, create_groups_kb, create_pagination_kb
+from bot.lexicon import (
+    LEXICON_INLINE_KEYBOARDS_TYPES,
+    LEXICON,
+    LEXICON_DAYS_RU,
+    LEXICON_PARITY,
+)
 from bot.states import ScheduleStates
 
 users_router = Router()
@@ -19,12 +24,25 @@ logger = logging.getLogger(__name__)
 async def process_start_command(message: Message, state: FSMContext):
     """Хендлер для команды /start. Отправляет пользователю приветственное сообщение и отображает меню с факультетами."""
 
+    data = await state.get_data()
+    last_msg_id = data.get("last_bot_message_id")
+
+    # Удаляем предыдущее сообщение бота
+    if last_msg_id:
+        try:
+            await message.bot.delete_message(
+                chat_id=message.chat.id, message_id=last_msg_id
+            )
+        except:
+            pass  # если уже удалено — игнорируем
+
     await state.clear()
     await state.set_state(ScheduleStates.choosing_faculty)
 
     keyboard: InlineKeyboardMarkup = await create_faculties_kb()
 
-    await message.answer(text=LEXICON["start"], reply_markup=keyboard)
+    sent_message = await message.answer(text=LEXICON["start"], reply_markup=keyboard)
+    await state.update_data(last_bot_message_id=sent_message.message_id)
     await message.delete()
 
 
@@ -45,9 +63,10 @@ async def process_faculty_selection(callback: CallbackQuery, state: FSMContext):
 
     message = LEXICON["choice_group"]
 
-    await callback.message.edit_text(
+    sent_message = await callback.message.edit_text(
         text=message.format(faculty_name=faculty_name), reply_markup=keyboard
     )
+    await state.update_data(last_bot_message_id=sent_message.message_id)
     await callback.answer()
 
 
@@ -61,25 +80,108 @@ async def process_group_selection(callback: CallbackQuery, state: FSMContext):
     group_name = callback.data.split(":")[1]
     logger.info(f"Пользователь выбрал группу: {group_name}")
 
+    await state.update_data(group=group_name)
+
     data = await state.get_data()
 
-    schedule = send_schedule(faculty=data.get("faculty"), current_group=group_name)
+    schedule = send_schedule(
+        faculty=data.get("faculty"), current_group=data.get("group")
+    )
 
     today_count = get_today()
     today = LEXICON_DAYS_RU[today_count]
 
-    parity = "Нечетная" if week_parity().startswith("ч") else "Четная"
+    parity_count = week_parity()
+    parity = "Нечетная" if LEXICON_PARITY[parity_count].startswith("ч") else "Четная"
 
     message = LEXICON["schedule_message"]
-    # keyboard: InlineKeyboardMarkup = await create_groups_kb(faculty=faculty_name)
+    keyboard: InlineKeyboardMarkup = await create_pagination_kb(current_day=today_count)
 
-    await callback.message.edit_text(
+    await state.update_data(current_parity=parity_count)
+    sent_message = await callback.message.edit_text(
         text=message.format(
             group_name=group_name,
             current_week=parity,
             final_schedule=schedule,
             current_day=today,
         ),
-        reply_markup=None,
+        reply_markup=keyboard,
     )
+    await state.update_data(last_bot_message_id=sent_message.message_id)
+    await callback.answer()
+
+
+@users_router.callback_query(F.data.startswith("prev:") | F.data.startswith("next:"))
+async def process_pagination(callback: CallbackQuery, state: FSMContext):
+    """Хендлер для обработки пагинации. Отправляет расписание на другой день."""
+
+    current_day = int(callback.data.split(":")[1])
+    logger.info(f"Пользователь выбрал день: {LEXICON_DAYS_RU[current_day]}")
+
+    data = await state.get_data()
+    parity_count = data.get("current_parity")
+
+    schedule = send_schedule(
+        faculty=data.get("faculty"),
+        current_group=data.get("group"),
+        current_day=current_day,
+    )
+
+    parity = "Нечетная" if LEXICON_PARITY[parity_count].startswith("ч") else "Четная"
+
+    message = LEXICON["schedule_message"]
+
+    keyboard: InlineKeyboardMarkup = await create_pagination_kb(current_day=current_day)
+
+    sent_message = await callback.message.edit_text(
+        text=message.format(
+            group_name=data.get("group"),
+            current_week=parity,
+            final_schedule=schedule,
+            current_day=LEXICON_DAYS_RU[current_day],
+        ),
+        reply_markup=keyboard,
+    )
+    await state.update_data(last_bot_message_id=sent_message.message_id)
+    await callback.answer()
+
+
+@users_router.callback_query(F.data.startswith("current:"))
+async def process_current_day(callback: CallbackQuery, state: FSMContext):
+    """Хендлер отправки расписания для того же дня следующей по четности недели."""
+
+    current_day = int(callback.data.split(":")[1])
+    logger.info(
+        f"Пользователь выбрал кнопку смены чётности недели: {LEXICON_DAYS_RU[current_day]}"
+    )
+
+    data = await state.get_data()
+    parity_count = data.get("current_parity")
+
+    schedule = send_schedule(
+        faculty=data.get("faculty"),
+        current_group=data.get("group"),
+        current_day=current_day,
+        current_parity=parity_count,
+    )
+
+    parity = (
+        "Нечетная" if not LEXICON_PARITY[parity_count].startswith("ч") else "Четная"
+    )
+
+    message = LEXICON["schedule_message"]
+
+    keyboard: InlineKeyboardMarkup = await create_pagination_kb(current_day=current_day)
+
+    await state.update_data(current_parity=0 if parity_count == 1 else 1)
+    sent_message = await callback.message.edit_text(
+        text=message.format(
+            group_name=data.get("group"),
+            current_week=parity,
+            final_schedule=schedule,
+            current_day=LEXICON_DAYS_RU[current_day],
+        ),
+        reply_markup=keyboard,
+    )
+    await state.update_data(last_bot_message_id=sent_message.message_id)
     await callback.answer()
