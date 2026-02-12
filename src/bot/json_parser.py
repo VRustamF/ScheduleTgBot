@@ -6,11 +6,11 @@ from bot.lexicon import LEXICON, LEXICON_DAYS_RU, LEXICON_PARITY
 from core.config import settings, BASE_DIR
 
 
-def get_today() -> str:
+def get_today() -> int:
     """Функция, которая определяет сегодняшний день"""
 
     now = datetime.now(timezone.utc)
-    return LEXICON_DAYS_RU[now.weekday()]
+    return now.weekday()
 
 
 def week_parity() -> str:
@@ -34,7 +34,8 @@ def schedule_parser(
     ) as f:
         data = json.load(f)
 
-    today = get_today()
+    today_count = get_today()
+    today = LEXICON_DAYS_RU[today_count]
     parity = week_parity()
 
     subjects = {}

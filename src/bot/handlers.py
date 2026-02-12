@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 
 from bot.json_parser import send_schedule, get_today, week_parity
 from bot.utils import create_faculties_kb, create_groups_kb
-from bot.lexicon import LEXICON_INLINE_KEYBOARDS_TYPES, LEXICON
+from bot.lexicon import LEXICON_INLINE_KEYBOARDS_TYPES, LEXICON, LEXICON_DAYS_RU
 from bot.states import ScheduleStates
 
 users_router = Router()
@@ -64,17 +64,22 @@ async def process_group_selection(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
     schedule = send_schedule(faculty=data.get("faculty"), current_group=group_name)
-    current_day = get_today()
+
+    today_count = get_today()
+    today = LEXICON_DAYS_RU[today_count]
+
     parity = "Нечетная" if week_parity().startswith("ч") else "Четная"
 
     message = LEXICON["schedule_message"]
+    # keyboard: InlineKeyboardMarkup = await create_groups_kb(faculty=faculty_name)
 
     await callback.message.edit_text(
         text=message.format(
             group_name=group_name,
             current_week=parity,
             final_schedule=schedule,
-            current_day=current_day,
-        )
+            current_day=today,
+        ),
+        reply_markup=None,
     )
     await callback.answer()

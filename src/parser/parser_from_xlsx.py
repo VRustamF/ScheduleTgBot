@@ -29,6 +29,7 @@ def parser() -> None:
 
         day_column = 0
         time_column = 0
+        aud_list = []
         groups_columns = defaultdict(str)
 
         # Выдает значение ячейки даже если она объединенная
@@ -47,7 +48,7 @@ def parser() -> None:
             return None
 
         # Цикл, который пробегает по первой строке и ищет группы, колонку дней и колонку времени
-        for col in range(1, sheet_columns):
+        for col in range(1, sheet_columns + 1):
             cell_val = sheet.cell(row=1, column=col).value
 
             if cell_val:
@@ -61,6 +62,8 @@ def parser() -> None:
                     time_column = col
                 elif cell_val.lower().startswith("день"):
                     day_column = col
+                elif cell_val.lower() == "ауд":
+                    aud_list.append(col)
 
         # Парсит данные
         current_day = ""
@@ -95,7 +98,10 @@ def parser() -> None:
                             )
                             added_day_in_groups[group_col].append(current_day)
 
-                        aud = sheet.cell(row=row, column=col + 1).value
+                        aud = ""
+                        for aud_col in aud_list:
+                            if col < aud_col:
+                                aud = sheet.cell(row=row, column=aud_col).value
 
                         add_subject(
                             subject=Subjects(
@@ -112,6 +118,3 @@ def parser() -> None:
         f"{FILES_PATH}{settings.schedule.final_schedule}", "w", encoding="utf-8"
     ) as f:
         f.write(BASE_SCHEDULE.model_dump_json(indent=4, ensure_ascii=False))
-
-
-parser()
