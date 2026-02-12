@@ -10,6 +10,9 @@ from core.db import BASE_SCHEDULE, Subjects, WeeklySchedules
 from parser.schedule_crud import add_schedule, add_subject, add_day
 
 FILES_PATH = f"{BASE_DIR}{settings.schedule.path}"
+pattern = re.compile(
+    r"^([01]?\d|2[0-3]):[0-5]\d:[0-5]\d - ([01]?\d|2[0-3]):[0-5]\d:[0-5]\d$"
+)
 
 
 def parser() -> None:
@@ -71,10 +74,13 @@ def parser() -> None:
                 if (
                     cell_val
                     and len(cleaned_val := re.sub(r"\s+", " ", cell_val).strip()) > 2
-                ):  # >3 чтобы не брать такие значения как "н." или "ч."
+                ):  # >2 чтобы не брать такие значения как "н." или "ч."
                     if col == day_column and cell_val != current_day:
                         current_day = cell_val
                     elif col == time_column and cell_val != current_time:
+                        current_time = cell_val
+
+                    elif pattern.match(cleaned_val):
                         current_time = cell_val
 
                     elif col in groups_columns.keys() and cell_val != get_merged_value(
@@ -106,3 +112,6 @@ def parser() -> None:
         f"{FILES_PATH}{settings.schedule.final_schedule}", "w", encoding="utf-8"
     ) as f:
         f.write(BASE_SCHEDULE.model_dump_json(indent=4, ensure_ascii=False))
+
+
+parser()
