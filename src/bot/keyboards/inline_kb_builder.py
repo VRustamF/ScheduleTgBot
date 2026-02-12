@@ -5,6 +5,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 def create_inline_kb(
     width: int, button_type: str | None, *args, **kwargs
 ) -> InlineKeyboardMarkup:
+    """Создает клавиатуру на основе переданных аргументов"""
 
     kb_builder = InlineKeyboardBuilder()
     buttons: list[InlineKeyboardButton] = []

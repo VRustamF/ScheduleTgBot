@@ -3,7 +3,7 @@ import logging
 from aiogram import Router, F
 
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 
 from bot.json_parser import send_schedule, get_today, week_parity
@@ -34,7 +34,7 @@ async def process_start_command(message: Message, state: FSMContext):
                 chat_id=message.chat.id, message_id=last_msg_id
             )
         except:
-            pass  # если уже удалено — игнорируем
+            pass  # если уже удалено или сообщения нет — игнорируем
 
     await state.clear()
     await state.set_state(ScheduleStates.choosing_faculty)
@@ -42,6 +42,27 @@ async def process_start_command(message: Message, state: FSMContext):
     keyboard: InlineKeyboardMarkup = await create_faculties_kb()
 
     sent_message = await message.answer(text=LEXICON["start"], reply_markup=keyboard)
+    await state.update_data(last_bot_message_id=sent_message.message_id)
+    await message.delete()
+
+
+@users_router.message(Command(commands="help"))
+async def process_start_command(message: Message, state: FSMContext):
+    """Хендлер для команды /help"""
+
+    data = await state.get_data()
+    last_msg_id = data.get("last_bot_message_id")
+
+    # Удаляем предыдущее сообщение бота
+    if last_msg_id:
+        try:
+            await message.bot.delete_message(
+                chat_id=message.chat.id, message_id=last_msg_id
+            )
+        except:
+            pass  # если уже удалено или сообщения нет — игнорируем
+
+    sent_message = await message.answer(text=LEXICON["help"])
     await state.update_data(last_bot_message_id=sent_message.message_id)
     await message.delete()
 
@@ -185,3 +206,10 @@ async def process_current_day(callback: CallbackQuery, state: FSMContext):
     )
     await state.update_data(last_bot_message_id=sent_message.message_id)
     await callback.answer()
+
+
+@users_router.message()
+async def process_start_command(message: Message):
+    """Хендлер для сообщений пользователя, которые не являются командами"""
+
+    await message.delete()
