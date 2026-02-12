@@ -6,8 +6,9 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
+from bot.json_parser import send_schedule, get_today, week_parity
 from bot.utils import create_faculties_kb, create_groups_kb
-from bot.lexicon.lexicon import LEXICON_INLINE_KEYBOARDS_TYPES
+from bot.lexicon import LEXICON_INLINE_KEYBOARDS_TYPES, LEXICON
 from bot.states import ScheduleStates
 
 users_router = Router()
@@ -23,8 +24,8 @@ async def process_start_command(message: Message, state: FSMContext):
 
     keyboard: InlineKeyboardMarkup = await create_faculties_kb()
 
-    await message.answer(text="Прив", reply_markup=keyboard)
-    await message.delete()  # не знаю надо ли удалять, но пусть будет
+    await message.answer(text=LEXICON["start"], reply_markup=keyboard)
+    await message.delete()
 
 
 @users_router.callback_query(
@@ -42,8 +43,10 @@ async def process_faculty_selection(callback: CallbackQuery, state: FSMContext):
 
     keyboard: InlineKeyboardMarkup = await create_groups_kb(faculty=faculty_name)
 
+    message = LEXICON["choice_group"]
+
     await callback.message.edit_text(
-        text=f"Вы выбрали факультет: {faculty_name}", reply_markup=keyboard
+        text=message.format(faculty_name=faculty_name), reply_markup=keyboard
     )
     await callback.answer()
 
@@ -58,7 +61,20 @@ async def process_group_selection(callback: CallbackQuery, state: FSMContext):
     group_name = callback.data.split(":")[1]
     logger.info(f"Пользователь выбрал группу: {group_name}")
 
-    await state.update_data(group=group_name)
+    data = await state.get_data()
 
-    await callback.message.edit_text(text=f"Вы выбрали группу: {group_name}")
+    schedule = send_schedule(faculty=data.get("faculty"), current_group=group_name)
+    current_day = get_today()
+    parity = "Нечетная" if week_parity().startswith("ч") else "Четная"
+
+    message = LEXICON["schedule_message"]
+
+    await callback.message.edit_text(
+        text=message.format(
+            group_name=group_name,
+            current_week=parity,
+            final_schedule=schedule,
+            current_day=current_day,
+        )
+    )
     await callback.answer()

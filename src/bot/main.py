@@ -9,7 +9,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from core.config import settings
 from bot.keyboards.main_keyboard import set_main_menu
 
-from bot.handlers.users import users_router
+from bot.handlers import users_router
 
 logging.basicConfig(
     level=logging.getLevelName(settings.log.level),

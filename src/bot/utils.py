@@ -4,7 +4,7 @@ from aiogram.types import InlineKeyboardMarkup
 
 from bot.keyboards.inline_kb_builder import create_inline_kb
 from core.config import settings, BASE_DIR
-from lexicon.lexicon import LEXICON_INLINE_KEYBOARDS_TYPES
+from bot.lexicon import LEXICON_INLINE_KEYBOARDS_TYPES
 
 
 async def create_faculties_kb() -> InlineKeyboardMarkup:
