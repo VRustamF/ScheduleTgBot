@@ -1,3 +1,5 @@
+import logging
+
 import xlrd
 from xlrd import Book
 
@@ -5,6 +7,8 @@ import openpyxl
 from openpyxl import Workbook
 
 from core import settings, BASE_DIR
+
+logger = logging.getLogger(__name__)
 
 FILES_PATH = f"{BASE_DIR}{settings.schedule.path}"
 
@@ -55,5 +59,8 @@ def formatter() -> None:
     sheet_names = book.sheet_names()
 
     for s_name in sheet_names:
+        logger.info(f"Начало копирования объединенных ячеек для факультета {s_name}")
         workbook: Workbook = copy_merge_cells_to_xlsx(s_name=s_name, book=book)
+        logger.info(f"Конец копирования объединенных ячеек для факультета {s_name}")
         workbook.save(f"{FILES_PATH}{s_name}.xlsx")
+        logger.info(f"Файл {s_name} сохранен")

@@ -1,6 +1,6 @@
 import json
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from bot.lexicon import LEXICON, LEXICON_DAYS_RU, LEXICON_PARITY
 from core.config import settings, BASE_DIR
@@ -9,7 +9,7 @@ from core.config import settings, BASE_DIR
 def get_today() -> int:
     """Функция, которая определяет сегодняшний день"""
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now()
     return now.weekday()
 
 

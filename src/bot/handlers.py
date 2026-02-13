@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 async def process_start_command(message: Message, state: FSMContext):
     """Хендлер для команды /start. Отправляет пользователю приветственное сообщение и отображает меню с факультетами."""
 
+    logger.info(f"Пользователь {message.from_user.id} ввёл команду /start")
+
     data = await state.get_data()
     last_msg_id = data.get("last_bot_message_id")
 
@@ -47,8 +49,10 @@ async def process_start_command(message: Message, state: FSMContext):
 
 
 @users_router.message(Command(commands="help"))
-async def process_start_command(message: Message, state: FSMContext):
+async def process_help_command(message: Message, state: FSMContext):
     """Хендлер для команды /help"""
+
+    logger.info(f"Пользователь {message.from_user.id} ввёл команду /start")
 
     data = await state.get_data()
     last_msg_id = data.get("last_bot_message_id")
@@ -75,7 +79,9 @@ async def process_faculty_selection(callback: CallbackQuery, state: FSMContext):
     """Хендлер для обработки выбора факультета. Отправляет пользователю список групп для выбора."""
 
     faculty_name = callback.data.split(":")[1]
-    logger.info(f"Пользователь выбрал факультет: {faculty_name}")
+    logger.info(
+        f"Пользователь {callback.from_user.id} выбрал факультет: {faculty_name}"
+    )
 
     await state.update_data(faculty=faculty_name)
     await state.set_state(ScheduleStates.choosing_group)
@@ -99,7 +105,7 @@ async def process_group_selection(callback: CallbackQuery, state: FSMContext):
     """Хендлер для обработки выбора Группы. Отправляет расписание."""
 
     group_name = callback.data.split(":")[1]
-    logger.info(f"Пользователь выбрал группу: {group_name}")
+    logger.info(f"Пользователь {callback.from_user.id} выбрал группу: {group_name}")
 
     await state.update_data(group=group_name)
 
@@ -123,7 +129,7 @@ async def process_group_selection(callback: CallbackQuery, state: FSMContext):
         text=message.format(
             group_name=group_name,
             current_week=parity,
-            final_schedule=schedule,
+            final_schedule=schedule if schedule else LEXICON["nothing"],
             current_day=today,
         ),
         reply_markup=keyboard,
@@ -137,7 +143,9 @@ async def process_pagination(callback: CallbackQuery, state: FSMContext):
     """Хендлер для обработки пагинации. Отправляет расписание на другой день."""
 
     current_day = int(callback.data.split(":")[1])
-    logger.info(f"Пользователь выбрал день: {LEXICON_DAYS_RU[current_day]}")
+    logger.info(
+        f"Пользователь {callback.from_user.id} выбрал день: {LEXICON_DAYS_RU[current_day]}"
+    )
 
     data = await state.get_data()
     parity_count = data.get("current_parity")
@@ -158,7 +166,7 @@ async def process_pagination(callback: CallbackQuery, state: FSMContext):
         text=message.format(
             group_name=data.get("group"),
             current_week=parity,
-            final_schedule=schedule,
+            final_schedule=schedule if schedule else LEXICON["nothing"],
             current_day=LEXICON_DAYS_RU[current_day],
         ),
         reply_markup=keyboard,
@@ -168,12 +176,12 @@ async def process_pagination(callback: CallbackQuery, state: FSMContext):
 
 
 @users_router.callback_query(F.data.startswith("current:"))
-async def process_current_day(callback: CallbackQuery, state: FSMContext):
+async def process_change_parity(callback: CallbackQuery, state: FSMContext):
     """Хендлер отправки расписания для того же дня следующей по четности недели."""
 
     current_day = int(callback.data.split(":")[1])
     logger.info(
-        f"Пользователь выбрал кнопку смены чётности недели: {LEXICON_DAYS_RU[current_day]}"
+        f"Пользователь {callback.from_user.id} выбрал кнопку смены чётности недели"
     )
 
     data = await state.get_data()
@@ -199,7 +207,7 @@ async def process_current_day(callback: CallbackQuery, state: FSMContext):
         text=message.format(
             group_name=data.get("group"),
             current_week=parity,
-            final_schedule=schedule,
+            final_schedule=schedule if schedule else LEXICON["nothing"],
             current_day=LEXICON_DAYS_RU[current_day],
         ),
         reply_markup=keyboard,
@@ -209,7 +217,10 @@ async def process_current_day(callback: CallbackQuery, state: FSMContext):
 
 
 @users_router.message()
-async def process_start_command(message: Message):
+async def process_unknown_message(message: Message):
     """Хендлер для сообщений пользователя, которые не являются командами"""
 
+    logger.info(
+        f"Неизвестное сообщение от пользователя {message.from_user.id}: {message.text}"
+    )
     await message.delete()

@@ -27,7 +27,7 @@ LEXICON = {
 📖 {subject_name}  
 🏛 Аудитория: {aud}
 """,
-    "nothing": "Сегодня пар нет.",
+    "nothing": "<blockquote>Сегодня пар нет.</blockquote>",
 }
 
 LEXICON_INLINE_KEYBOARDS_TYPES = {

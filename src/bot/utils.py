@@ -51,7 +51,7 @@ async def create_pagination_kb(current_day: int) -> InlineKeyboardMarkup:
 
     buttons.update(
         {f"current:{current_day}": f"{LEXICON_DAYS_RU[current_day]}"}
-    )  # Кнопка текущего дня
+    )  # Кнопка текущего дня для смены четность недели
 
     if current_day < 6:
         buttons.update({f"next:{current_day + 1}": ">>"})  # Кнопка "Вперед"

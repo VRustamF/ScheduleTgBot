@@ -1,6 +1,9 @@
 import aiohttp
+import logging
 
 from core import settings, BASE_DIR
+
+logger = logging.getLogger(__name__)
 
 URL = settings.zgy.url
 
@@ -19,3 +22,4 @@ async def schedule_downloader() -> None:
             ) as f:
                 async for chunk in response.content.iter_chunked(8192):
                     f.write(chunk)
+                logger.info(f"Файл {settings.schedule.file_name} установлен.")

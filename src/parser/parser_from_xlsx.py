@@ -1,5 +1,6 @@
 import os
 import re
+import logging
 from collections import defaultdict
 
 import openpyxl as op
@@ -8,6 +9,8 @@ from openpyxl.cell.cell import MergedCell
 from core import settings, BASE_DIR
 from core.db import BASE_SCHEDULE, Subjects, WeeklySchedules
 from parser.schedule_crud import add_schedule, add_subject, add_day
+
+logger = logging.getLogger(__name__)
 
 FILES_PATH = f"{BASE_DIR}{settings.schedule.path}"
 pattern = re.compile(
@@ -21,6 +24,8 @@ def parser() -> None:
     for filename in os.listdir(FILES_PATH):
         if filename == settings.schedule.file_name or filename.endswith(".json"):
             continue
+
+        logger.info(f"Начало процесса парсинга данных из файла {filename}")
 
         wb = op.load_workbook(f"{FILES_PATH}{filename}", data_only=True)
         sheet = wb.active
@@ -56,6 +61,11 @@ def parser() -> None:
                     group = cell_val
                     new_weekly_schedule = WeeklySchedules(group_name=group)
                     add_schedule(schedule=new_weekly_schedule, faculty=filename[:-5])
+
+                    logger.info(
+                        f"Пустое недельное расписание для факультета {filename[:-5]} инициализировано успешно"
+                    )
+
                     groups_columns[col] = group
                     continue
                 elif cell_val.lower() == "время":
@@ -65,7 +75,7 @@ def parser() -> None:
                 elif cell_val.lower() == "ауд":
                     aud_list.append(col)
 
-        # Парсит данные
+        # Начало парсинга данных о предметах
         current_day = ""
         current_time = ""
         added_day_in_groups = defaultdict(list)
@@ -89,14 +99,17 @@ def parser() -> None:
                     elif col in groups_columns.keys() and cell_val != get_merged_value(
                         ws=sheet, r=row - 1, c=col
                     ):
-                        group_col = groups_columns[col]
-                        if current_day not in added_day_in_groups[group_col]:
+                        group_name = groups_columns[col]
+                        if current_day not in added_day_in_groups[group_name]:
                             add_day(
                                 day_name=current_day,
-                                group_name=group_col,
+                                group_name=group_name,
                                 faculty=filename[:-5],
                             )
-                            added_day_in_groups[group_col].append(current_day)
+                            logger.info(
+                                f"Пустой день {current_day} добавлен в группу {filename[:-5]}"
+                            )
+                            added_day_in_groups[group_name].append(current_day)
 
                         aud = "Не указано"
                         for aud_col in aud_list:
@@ -109,12 +122,18 @@ def parser() -> None:
                                 audience=aud if aud else "Не указано",
                                 time=current_time,
                             ),
-                            group_name=group_col,
+                            group_name=group_name,
                             day_name=current_day,
                             faculty=filename[:-5],
+                        )
+
+                        logger.info(
+                            f"Добавлен предмет {cleaned_val} к расписанию группы {group_name} факультета {filename[:-5]}"
                         )
 
     with open(
         f"{FILES_PATH}{settings.schedule.final_schedule}", "w", encoding="utf-8"
     ) as f:
+        logger.info("Начало процесса записи расписания в json файл")
         f.write(BASE_SCHEDULE.model_dump_json(indent=4, ensure_ascii=False))
+        logger.info("Конец процесса записи расписания в json файл")
