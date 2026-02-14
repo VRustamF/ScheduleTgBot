@@ -7,16 +7,24 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 
 
 class ZgySiteConfig(BaseModel):
-    """Ссылка на расписание. В будущем можно будет добавить ссылки на другие расписания"""
+    """Ссылки на расписания"""
 
-    url: str
+    urls: dict = {
+        "ochnoe-bak": "https://norvuz.ru/upload/timetable/1-ochnoe.xls",
+        "ochno-zaochnoe-bak": "https://norvuz.ru/upload/timetable/2-ochno-zaochnoe.xls",
+        "zaochnoe-bak": "https://norvuz.ru/upload/timetable/3-zaochnoe.xls",
+        "ochnoe-mag": "https://norvuz.ru/upload/timetable/4-ochnoe-mag.xls",
+        "ochno-zaochnoe-mag": "https://norvuz.ru/upload/timetable/5-ochno-zaochnoe-mag.xls",
+        "zaochnoe-mag": "https://norvuz.ru/upload/timetable/6-zaochnoe-mag.xls",
+        "ochnoe-asp": "https://norvuz.ru/upload/timetable/7-ochnoe-asp.xls",
+    }
 
 
 class ScheduleFileConfig(BaseModel):
     """Настройки файлов с расписанием"""
 
-    file_name: str = "schedule.xls"  #
-    path: str = "/files/"  # Путь к файлам расписания
+    file_name: str = "schedule.xls"  # Название файла базового расписания
+    path: str = "/files/{schedule_dir}"  # Путь к файлам расписания
     final_schedule: str = "schedule.json"  # Финальный файл расписания
 
 
@@ -49,10 +57,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    zgy: ZgySiteConfig
     log: LoggerConfig
     bot: BotConfig
     redis: RedisConfig
+    zgy: ZgySiteConfig = ZgySiteConfig()
     schedule: ScheduleFileConfig = ScheduleFileConfig()
 
 
