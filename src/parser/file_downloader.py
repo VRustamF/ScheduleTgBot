@@ -6,10 +6,6 @@ from pathlib import Path
 
 from core import settings, BASE_DIR
 
-logging.basicConfig(
-    level=logging.getLevelName(settings.log.level),
-    format=settings.log.format,
-)
 logger = logging.getLogger(__name__)
 
 URLS = settings.zgy.urls
@@ -54,7 +50,3 @@ async def schedule_downloader() -> None:
         for key, result in zip(URLS.keys(), results):
             if isinstance(result, Exception):
                 logger.error(f"Задача для {key} завершилась с ошибкой: {result}")
-
-
-if __name__ == "__main__":
-    asyncio.run(schedule_downloader())
