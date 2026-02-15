@@ -29,6 +29,3 @@ class AllSchedules(BaseModel):
     """Список всех расписаний в формате: Факультет: Недельные расписания для всех групп факультета"""
 
     schedules: dict[str, list[WeeklySchedules]] = defaultdict(list)
-
-
-BASE_SCHEDULE = AllSchedules()
