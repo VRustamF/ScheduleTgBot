@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import xlrd
@@ -8,9 +9,8 @@ from openpyxl import Workbook
 
 from core import settings, BASE_DIR
 
-logger = logging.getLogger(__name__)
 
-FILES_PATH = f"{BASE_DIR}{settings.schedule.path}"
+logger = logging.getLogger(__name__)
 
 
 def copy_merge_cells_to_xlsx(s_name: str, book: Book) -> Workbook:
@@ -46,21 +46,36 @@ def copy_merge_cells_to_xlsx(s_name: str, book: Book) -> Workbook:
     return wb
 
 
-def formatter() -> None:
+async def formatter(form_education: str) -> None:
     """
     Позволяет конвертировать xls в xlsx без потери объединенных ячеек.
     Создает для каждого листа отдельную таблицу
     """
 
+    schedule_path = settings.schedule.path.format(schedule_dir=form_education)
+    file_path = f"{BASE_DIR}/{schedule_path}"
+
     # читаем xls
-    book = xlrd.open_workbook(
-        filename=f"{FILES_PATH}{settings.schedule.file_name}", formatting_info=True
+    book = await asyncio.to_thread(
+        xlrd.open_workbook,
+        filename=f"{file_path}/{settings.schedule.file_name}",
+        formatting_info=True,
     )
     sheet_names = book.sheet_names()
 
     for s_name in sheet_names:
         logger.info(f"Начало копирования объединенных ячеек для факультета {s_name}")
-        workbook: Workbook = copy_merge_cells_to_xlsx(s_name=s_name, book=book)
-        logger.info(f"Конец копирования объединенных ячеек для факультета {s_name}")
-        workbook.save(f"{FILES_PATH}{s_name}.xlsx")
+
+        workbook: Workbook = await asyncio.to_thread(
+            copy_merge_cells_to_xlsx,
+            s_name=s_name,
+            book=book,
+        )
+
+        await asyncio.to_thread(workbook.save, f"{file_path}/{s_name}.xlsx")
         logger.info(f"Файл {s_name} сохранен")
+
+
+async def start_formatter():
+    tasks = [formatter(form_education=key) for key in settings.zgy.urls.keys()]
+    await asyncio.gather(*tasks, return_exceptions=True)
