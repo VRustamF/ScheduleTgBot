@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from pathlib import Path
 
 import xlrd
 from xlrd import Book
@@ -52,12 +53,13 @@ async def formatter(form_education: str) -> None:
     """
 
     schedule_path = settings.schedule.path.format(schedule_dir=form_education)
-    file_path = f"{BASE_DIR}/{schedule_path}"
+    file_path = Path(f"{BASE_DIR}/{schedule_path}")
 
     # читаем xls
+    xls_file_path = file_path / settings.schedule.file_name
     book = await asyncio.to_thread(
         xlrd.open_workbook,
-        filename=f"{file_path}/{settings.schedule.file_name}",
+        filename=Path(xls_file_path),
         formatting_info=True,
     )
     sheet_names = book.sheet_names()
@@ -71,7 +73,8 @@ async def formatter(form_education: str) -> None:
             book=book,
         )
 
-        await asyncio.to_thread(workbook.save, f"{file_path}/{s_name}.xlsx")
+        xlsx_file_path = file_path / f"{s_name}.xlsx"
+        await asyncio.to_thread(workbook.save, xlsx_file_path)
         logger.info(f"Файл {s_name} сохранен")
 
 

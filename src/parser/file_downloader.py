@@ -17,12 +17,14 @@ async def download_schedule(session: aiohttp.ClientSession, key: str, url: str) 
     async with session.get(url) as response:
         response.raise_for_status()
         schedule_path = settings.schedule.path.format(schedule_dir=key)
-        file_path = Path(f"{BASE_DIR}/{schedule_path}/{settings.schedule.file_name}")
+        full_file_path = Path(
+            f"{BASE_DIR}/{schedule_path}/{settings.schedule.file_name}"
+        )
 
         # Создать папку если её нет
-        file_path.parent.mkdir(parents=True, exist_ok=True)
+        full_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        async with aiofiles.open(file_path, "wb") as f:
+        async with aiofiles.open(full_file_path, "wb") as f:
             async for chunk in response.content.iter_chunked(8192):
                 await f.write(chunk)
 
