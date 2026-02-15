@@ -21,25 +21,40 @@ def copy_merge_cells_to_xlsx(s_name: str, book: Book) -> Workbook:
     # создаём xlsx
     wb = openpyxl.Workbook()
     ws = wb.active
+    start_row = 0
+
+    # ищем слово "дни" для того, чтобы задать стартовую строку с которой будет начинаться расписание
+    for r in range(sheet.nrows):
+        cell_val = sheet.cell_value(r, 0)
+
+        if isinstance(cell_val, str) and (
+            "дни" in cell_val.lower() or "день" in cell_val.lower()
+        ):
+            start_row = r
+            break
+
+    if start_row == 0:
+        logger.warning(f"Слово 'дни' не найдено в листе {s_name}")
+        start_row = 7
 
     # копируем значения (не обязательно, но обычно нужно)
-    for r in range(7, sheet.nrows):
+    for r in range(start_row, sheet.nrows):
         for c in range(sheet.ncols):
-            ws.cell(row=r - 7 + 1, column=c + 1).value = sheet.cell_value(r, c)
+            ws.cell(row=r - start_row + 1, column=c + 1).value = sheet.cell_value(r, c)
 
     # переносим merged cells
     for r1, r2, c1, c2 in sheet.merged_cells:
         # полностью выше данных -> пропускаем
-        if r2 <= 7:
+        if r2 <= start_row:
             continue
 
         # подрезаем merge, если он начинается выше 8 строки
-        new_r1 = max(r1, 7)
+        new_r1 = max(r1, start_row)
         new_r2 = r2
 
         ws.merge_cells(
-            start_row=new_r1 - 7 + 1,
-            end_row=new_r2 - 7,
+            start_row=new_r1 - start_row + 1,
+            end_row=new_r2 - start_row,
             start_column=c1 + 1,
             end_column=c2,
         )
@@ -81,3 +96,6 @@ async def formatter(form_education: str) -> None:
 async def start_formatter():
     tasks = [formatter(form_education=key) for key in settings.zgy.urls.keys()]
     await asyncio.gather(*tasks, return_exceptions=True)
+
+
+asyncio.run(start_formatter())
