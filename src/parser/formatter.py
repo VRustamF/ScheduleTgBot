@@ -13,6 +13,66 @@ from core import settings, BASE_DIR
 logger = logging.getLogger(__name__)
 
 
+def find_schedule_boundaries(sheet) -> tuple[int, int]:
+    """Находит начальную и конечную строки расписания"""
+
+    start_row = 0
+    end_row = sheet.nrows
+
+    # ищем слово "дни" для того, чтобы задать стартовую строку с которой будет начинаться расписание
+    for c in range(sheet.ncols):
+        for r in range(sheet.nrows):
+            cell_val = sheet.cell_value(r, c)
+
+            if isinstance(cell_val, str) and (
+                "дни" in cell_val.lower() or "день" in cell_val.lower()
+            ):
+                start_row = r
+
+        if start_row != 0:
+            break
+
+    if start_row == 0:
+        logger.warning(f"В {sheet.name} слово 'дни' не найдено")
+        start_row = 7
+
+    # Ищем последнюю строку расписания
+    saturday_row = None
+    saturday_col = None
+    for c in range(sheet.ncols):
+        if saturday_row is not None:
+            break
+
+        for r in range(start_row, sheet.nrows):
+            cell_val = sheet.cell_value(r, c)
+
+            if isinstance(cell_val, str) and ("суббота" in cell_val.lower()):
+                saturday_row = r
+                saturday_col = c
+                break
+
+    if saturday_row is None:
+        logger.warning(f"В {sheet.name} слово 'суббота' не найдено")
+        return start_row, sheet.nrows
+
+    # Ищем merged cell, содержащий субботу
+    end_row = saturday_row + 1  # По умолчанию одна строка после субботы
+    for r1, r2, c1, c2 in sheet.merged_cells:
+        if r1 <= saturday_row < r2 and c1 <= saturday_col < c2:
+            end_row = r2
+            logger.warning(
+                f"{sheet.name}\nНачало: {r1}\nКонец: {r2}\nСуббота: {saturday_row}\n\n"
+            )
+            break
+
+    logger.info(
+        f"В {sheet.name} границы расписания: "
+        f"строки {start_row}-{end_row-1} (всего {end_row - start_row} строк)"
+    )
+
+    return start_row, end_row
+
+
 def copy_merge_cells_to_xlsx(s_name: str, book: Book) -> Workbook:
     """Функция, которая переносит объединенные ячейки из xls в xlsx"""
 
@@ -21,36 +81,22 @@ def copy_merge_cells_to_xlsx(s_name: str, book: Book) -> Workbook:
     # создаём xlsx
     wb = openpyxl.Workbook()
     ws = wb.active
-    start_row = 0
+    start_row, end_row = find_schedule_boundaries(sheet=sheet)
 
-    # ищем слово "дни" для того, чтобы задать стартовую строку с которой будет начинаться расписание
-    for r in range(sheet.nrows):
-        cell_val = sheet.cell_value(r, 0)
-
-        if isinstance(cell_val, str) and (
-            "дни" in cell_val.lower() or "день" in cell_val.lower()
-        ):
-            start_row = r
-            break
-
-    if start_row == 0:
-        logger.warning(f"Слово 'дни' не найдено в листе {s_name}")
-        start_row = 7
-
-    # копируем значения (не обязательно, но обычно нужно)
-    for r in range(start_row, sheet.nrows):
+    # копируем значения
+    for r in range(start_row, end_row):
         for c in range(sheet.ncols):
             ws.cell(row=r - start_row + 1, column=c + 1).value = sheet.cell_value(r, c)
 
     # переносим merged cells
     for r1, r2, c1, c2 in sheet.merged_cells:
         # полностью выше данных -> пропускаем
-        if r2 <= start_row:
+        if r2 <= start_row or r1 >= end_row:
             continue
 
         # подрезаем merge, если он начинается выше 8 строки
         new_r1 = max(r1, start_row)
-        new_r2 = r2
+        new_r2 = min(r2, end_row)
 
         ws.merge_cells(
             start_row=new_r1 - start_row + 1,
