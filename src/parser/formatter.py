@@ -60,9 +60,6 @@ def find_schedule_boundaries(sheet) -> tuple[int, int]:
     for r1, r2, c1, c2 in sheet.merged_cells:
         if r1 <= saturday_row < r2 and c1 <= saturday_col < c2:
             end_row = r2
-            logger.warning(
-                f"{sheet.name}\nНачало: {r1}\nКонец: {r2}\nСуббота: {saturday_row}\n\n"
-            )
             break
 
     logger.info(
@@ -142,6 +139,3 @@ async def formatter(form_education: str) -> None:
 async def start_formatter():
     tasks = [formatter(form_education=key) for key in settings.zgy.urls.keys()]
     await asyncio.gather(*tasks, return_exceptions=True)
-
-
-asyncio.run(start_formatter())
