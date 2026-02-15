@@ -59,7 +59,7 @@ async def formatter(form_education: str) -> None:
     xls_file_path = file_path / settings.schedule.file_name
     book = await asyncio.to_thread(
         xlrd.open_workbook,
-        filename=Path(xls_file_path),
+        filename=str(xls_file_path),
         formatting_info=True,
     )
     sheet_names = book.sheet_names()
@@ -74,7 +74,7 @@ async def formatter(form_education: str) -> None:
         )
 
         xlsx_file_path = file_path / f"{s_name}.xlsx"
-        await asyncio.to_thread(workbook.save, xlsx_file_path)
+        await asyncio.to_thread(workbook.save, str(xlsx_file_path))
         logger.info(f"Файл {s_name} сохранен")
 
 
