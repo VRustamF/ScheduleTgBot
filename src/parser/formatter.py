@@ -9,7 +9,6 @@ from openpyxl import Workbook
 
 from core import settings, BASE_DIR
 
-
 logger = logging.getLogger(__name__)
 
 
