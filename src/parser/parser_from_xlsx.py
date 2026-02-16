@@ -9,9 +9,8 @@ from aiofiles.os import listdir
 import openpyxl as op
 from openpyxl.cell.cell import MergedCell
 
-from core import settings, BASE_DIR
-from core.db import Subjects, WeeklySchedules, AllSchedules
-from parser.schedule_crud import add_schedule, add_subject, add_day
+from core import settings, BASE_DIR, db_helper
+from crud.schedules import ScheduleService
 
 logger = logging.getLogger(__name__)
 
@@ -39,125 +38,154 @@ def get_merged_value(ws, r: int, c: int) -> str | None:
 
 async def parser(form_education: str) -> None:
     """Функция, которая парсит расписание всех курсов и сохраняет их в json"""
+    async for session in db_helper.session_getter():
+        schedule_path = settings.schedule.path.format(schedule_dir=form_education)
+        file_path = Path(f"{BASE_DIR}/{schedule_path}")
+        filenames = await aiofiles.os.listdir(file_path)
+        service = ScheduleService(session=session)
 
-    base_schedule = AllSchedules()
-    schedule_path = settings.schedule.path.format(schedule_dir=form_education)
-    file_path = Path(f"{BASE_DIR}/{schedule_path}")
-    filenames = await aiofiles.os.listdir(file_path)
+        for filename in filenames:
+            if filename == settings.schedule.file_name or filename.endswith(".json"):
+                continue
 
-    for filename in filenames:
-        if filename == settings.schedule.file_name or filename.endswith(".json"):
-            continue
+            try:
+                logger.info(f"Начало процесса парсинга данных из файла {filename}")
 
-        logger.info(f"Начало процесса парсинга данных из файла {filename}")
+                full_file_path = file_path / filename
+                wb = await asyncio.to_thread(
+                    op.load_workbook, str(full_file_path), data_only=True
+                )
+                sheet = wb.active
+                sheet_columns = sheet.max_column
+                sheet_rows = sheet.max_row
 
-        full_file_path = file_path / filename
-        wb = await asyncio.to_thread(
-            op.load_workbook, str(full_file_path), data_only=True
-        )
-        sheet = wb.active
-        sheet_columns = sheet.max_column
-        sheet_rows = sheet.max_row
+                day_column = 0
+                time_column = 0
+                aud_list = []
+                groups_columns = defaultdict(str)
 
-        day_column = 0
-        time_column = 0
-        aud_list = []
-        groups_columns = defaultdict(str)
+                # Цикл, который пробегает по первой строке и ищет группы, колонку дней и колонку времени
+                for col in range(1, sheet_columns + 1):
+                    cell_val = sheet.cell(row=1, column=col).value
 
-        # Цикл, который пробегает по первой строке и ищет группы, колонку дней и колонку времени
-        for col in range(1, sheet_columns + 1):
-            cell_val = sheet.cell(row=1, column=col).value
+                    if cell_val:
+                        if "время" in cell_val.lower() or "часы" in cell_val.lower():
+                            time_column = col
+                        elif cell_val.lower().startswith(("день", "дни")):
+                            day_column = col
+                        elif "ауд" in cell_val.lower():
+                            aud_list.append(col)
+                        elif cell_val[:2].isupper():
+                            group = cell_val
+                            groups_columns[col] = group
 
-            if cell_val:
-                if "время" in cell_val.lower() or "часы" in cell_val.lower():
-                    time_column = col
-                elif cell_val.lower().startswith(("день", "дни")):
-                    day_column = col
-                elif "ауд" in cell_val.lower():
-                    aud_list.append(col)
-                elif cell_val[:2].isupper():
-                    group = cell_val
-                    new_weekly_schedule = WeeklySchedules(group_name=group)
-                    await asyncio.to_thread(
-                        add_schedule,
-                        base_schedule=base_schedule,
-                        schedule=new_weekly_schedule,
+                # Также создается пустые недельное расписание для каждой группы
+                for col, group in groups_columns.items():
+                    service.add_schedule(
+                        form_education=form_education,
                         faculty=filename[:-5],
+                        group=group,
                     )
 
-                    logger.info(
-                        f"Пустое недельное расписание для факультета {filename[:-5]} инициализировано успешно"
+                # Один коммит для всех расписаний файла
+                await service.commit()
+                logger.info(f"Расписания для {filename[:-5]} созданы")
+
+                # Кэш недельного расписания для каждой группы, чтобы не дергать базу при добавлении предметов
+                schedules_cache = {}
+                for col, group in groups_columns.items():
+                    schedule = await service.get_schedule(
+                        form_education=form_education,
+                        faculty=filename[:-5],
+                        group=group,
                     )
+                    schedules_cache[group] = schedule
 
-                    groups_columns[col] = group
+                # Начало парсинга данных о предметах
+                current_day = ""
+                current_time = ""
+                daily_queue_numbers = defaultdict(
+                    int
+                )  # Счетчик для нумерации предметов на день для каждой группы
+                daily_schedules_cache = {}
 
-        # Начало парсинга данных о предметах
-        current_day = ""
-        current_time = ""
-        added_day_in_groups = defaultdict(list)
-        # С 3 строки начинается расписание, выше находятся группы
-        for row in range(3, sheet_rows):
-            for col in range(1, sheet_columns):
-                cell_val = get_merged_value(ws=sheet, r=row, c=col)
+                # С 3 строки начинается расписание, выше находятся группы
+                for row in range(3, sheet_rows):
+                    for col in range(1, sheet_columns):
+                        cell_val = get_merged_value(ws=sheet, r=row, c=col)
 
-                if (
-                    cell_val
-                    and (len(cleaned_val := re.sub(r"\s+", " ", cell_val).strip()) > 2)
-                    and ("декан" not in cell_val.lower())
-                ):  # >2 чтобы не брать такие значения как "н." или "ч."
-                    if col == day_column and cell_val != current_day:
-                        current_day = cell_val
-                    elif col == time_column and cell_val != current_time:
-                        current_time = cell_val
-
-                    elif pattern.match(cleaned_val):
-                        current_time = cell_val
-
-                    elif col in groups_columns.keys() and cell_val != get_merged_value(
-                        ws=sheet, r=row - 1, c=col
-                    ):
-                        group_name = groups_columns[col]
-                        if current_day not in added_day_in_groups[group_name]:
-                            await asyncio.to_thread(
-                                add_day,
-                                base_schedule=base_schedule,
-                                day_name=current_day,
-                                group_name=group_name,
-                                faculty=filename[:-5],
+                        if (
+                            cell_val
+                            and (
+                                len(
+                                    cleaned_val := re.sub(r"\s+", " ", cell_val).strip()
+                                )
+                                > 2  # >2 чтобы не брать такие значения как "н." или "ч."
                             )
-                            logger.info(
-                                f"Пустой день {current_day} добавлен в группу {filename[:-5]}"
-                            )
-                            added_day_in_groups[group_name].append(current_day)
+                            and ("декан" not in cell_val.lower())
+                        ):
+                            if col == day_column and cell_val.lower() != current_day:
+                                current_day = cell_val.lower()
+                            elif col == time_column and cell_val != current_time:
+                                current_time = cell_val
+                            elif pattern.match(cleaned_val):
+                                current_time = cell_val
+                            elif (
+                                col in groups_columns.keys()
+                                and cell_val
+                                != get_merged_value(ws=sheet, r=row - 1, c=col)
+                            ):
+                                group_name = groups_columns[col]
+                                schedule = schedules_cache[group_name]
 
-                        aud = "Не указано"
-                        for aud_col in aud_list:
-                            if col < aud_col:
-                                aud = sheet.cell(row=row, column=aud_col).value
-                                break
+                                # Создаем день если не создан
+                                cache_key = f"{group_name}_{current_day}"
+                                if cache_key not in daily_schedules_cache.keys():
+                                    daily_schedule = service.add_daily_schedule(
+                                        name=current_day,
+                                        schedule_id=schedule.id,
+                                    )
+                                    daily_schedules_cache[cache_key] = daily_schedule
+                                    daily_queue_numbers[cache_key] = 1
+                                    await session.flush()
+                                else:
+                                    daily_schedule = daily_schedules_cache[cache_key]
 
-                        await asyncio.to_thread(
-                            add_subject,
-                            base_schedule=base_schedule,
-                            subject=Subjects(
-                                subject_name=cleaned_val,
-                                audience=aud if aud else "Не указано",
-                                time=current_time,
-                            ),
-                            group_name=group_name,
-                            day_name=current_day,
-                            faculty=filename[:-5],
-                        )
+                                aud = "Не указано"
+                                for aud_col in aud_list:
+                                    if col < aud_col:
+                                        aud = sheet.cell(row=row, column=aud_col).value
+                                        break
 
-                        logger.info(
-                            f"Добавлен предмет {cleaned_val} к расписанию группы {group_name} факультета {filename[:-5]}"
-                        )
+                                subject_parity = None
+                                if cleaned_val.lower().startswith("ч."):
+                                    subject_parity = "четная"
+                                elif cleaned_val.lower().startswith("н."):
+                                    subject_parity = "нечетная"
 
-    output_file = file_path / settings.schedule.final_schedule
-    async with aiofiles.open(output_file, "w", encoding="utf-8") as f:
-        logger.info("Начало процесса записи расписания в json файл")
-        await f.write(base_schedule.model_dump_json(indent=4, ensure_ascii=False))
-        logger.info("Конец процесса записи расписания в json файл")
+                                service.add_subject(
+                                    name=cleaned_val,
+                                    queue_number=daily_queue_numbers[cache_key],
+                                    parity=subject_parity,
+                                    time=current_time,
+                                    audience=aud if aud else "Не указано",
+                                    teacher=None,
+                                    daily_schedule_id=daily_schedule.id,
+                                )
+                                await session.flush()
+
+                                daily_queue_numbers[cache_key] += 1
+
+                # один коммит для всех предметов файла
+                await service.commit()
+                logger.info(f"Парсинг файла {filename} завершен успешно")
+
+            except Exception as e:
+                await service.session.rollback()
+                logger.error(
+                    f"Ошибка при парсинге файла {filename}: {e}", exc_info=True
+                )
+                continue
 
 
 async def start_parser():
@@ -169,3 +197,7 @@ async def start_parser():
         logger.error(f"Ошибки при парсинге: {len(errors)}/{len(tasks)}")
         for error in errors:
             logger.error(f"Ошибка: {error}", exc_info=error)
+
+
+if __name__ == "__main__":
+    asyncio.run(start_parser())

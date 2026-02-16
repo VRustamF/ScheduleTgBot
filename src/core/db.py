@@ -46,7 +46,7 @@ class Subject(Base):
 
     name: Mapped[str]
     queue_number: Mapped[int]
-    parity: Mapped[int | None]
+    parity: Mapped[str | None]
     time: Mapped[str]
     audience: Mapped[str | None]
     teacher: Mapped[str | None]
