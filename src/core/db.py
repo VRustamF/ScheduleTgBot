@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import DateTime, func, ForeignKey
+from sqlalchemy import DateTime, func, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -83,6 +83,11 @@ class DailySchedule(Base):
 
 class Schedule(Base):
     __tablename__ = "schedules"
+    __table_args__ = (
+        UniqueConstraint(
+            "form_education", "faculty", "group", name="uq_schedule_group"
+        ),
+    )
 
     form_education: Mapped[str]
     faculty: Mapped[str]
