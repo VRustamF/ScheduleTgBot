@@ -4,9 +4,9 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.fsm.storage.memory import MemoryStorage
 
-from core.config import settings
+from core import settings, db_helper
 from bot.keyboards.main_keyboard import set_main_menu
 
 from bot.handlers import users_router
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
-    storage = RedisStorage.from_url(settings.redis.url)
+    storage = MemoryStorage()
 
     bot = Bot(
         token=settings.bot.token,
@@ -33,8 +33,15 @@ async def main() -> None:
 
     dp.include_router(users_router)
 
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    try:
+        await bot.delete_webhook(drop_pending_updates=True)
+        await dp.start_polling(bot)
+        logger.info("Bot started")
+    finally:
+        # Закрываем соединения при завершении
+        await db_helper.dispose()
+        await bot.session.close()
+        logger.info("Bot stopped")
 
 
 if __name__ == "__main__":
