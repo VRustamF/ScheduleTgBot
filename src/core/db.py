@@ -20,7 +20,7 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    user_id: Mapped[int]
+    user_id: Mapped[int] = mapped_column(unique=True, index=True)
     first_name: Mapped[str | None]
     username: Mapped[str | None]
     form_education: Mapped[str | None]
@@ -34,7 +34,7 @@ class User(Base):
 class BotMessage(Base):
     __tablename__ = "bot_messages"
 
-    message_id: Mapped[int]
+    message_id: Mapped[int] = mapped_column(unique=True, index=True)
     chat_id: Mapped[int]
 
     def __repr__(self):
