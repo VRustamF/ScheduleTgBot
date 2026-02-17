@@ -79,18 +79,6 @@ async def parser(form_education: str) -> None:
                             group = cell_val
                             groups_columns[col] = group
 
-                # Также создается пустые недельное расписание для каждой группы
-                for col, group in groups_columns.items():
-                    service.add_schedule(
-                        form_education=form_education,
-                        faculty=filename[:-5],
-                        group=group,
-                    )
-
-                # Один коммит для всех расписаний файла
-                await service.commit()
-                logger.info(f"Расписания для {filename[:-5]} созданы")
-
                 # Кэш недельного расписания для каждой группы, чтобы не дергать базу при добавлении предметов
                 schedules_cache = {}
                 for col, group in groups_columns.items():
@@ -99,6 +87,18 @@ async def parser(form_education: str) -> None:
                         faculty=filename[:-5],
                         group=group,
                     )
+
+                    if not schedule:
+                        schedule = await service.add_schedule(
+                            form_education=form_education,
+                            faculty=filename[:-5],
+                            group=group,
+                        )
+                        logger.info(f"Создано новое расписание для группы {group}")
+                    else:
+                        await service.clear_schedule_content(schedule_id=schedule.id)
+                        logger.info(f"Очищено содержимое расписания для группы {group}")
+
                     schedules_cache[group] = schedule
 
                 # Начало парсинга данных о предметах
@@ -141,13 +141,12 @@ async def parser(form_education: str) -> None:
                                 # Создаем день если не создан
                                 cache_key = f"{group_name}_{current_day}"
                                 if cache_key not in daily_schedules_cache.keys():
-                                    daily_schedule = service.add_daily_schedule(
+                                    daily_schedule = await service.add_daily_schedule(
                                         name=current_day,
                                         schedule_id=schedule.id,
                                     )
                                     daily_schedules_cache[cache_key] = daily_schedule
                                     daily_queue_numbers[cache_key] = 1
-                                    await session.flush()
                                 else:
                                     daily_schedule = daily_schedules_cache[cache_key]
 
@@ -163,7 +162,7 @@ async def parser(form_education: str) -> None:
                                 elif cleaned_val.lower().startswith("н."):
                                     subject_parity = "нечетная"
 
-                                service.add_subject(
+                                await service.add_subject(
                                     name=cleaned_val,
                                     queue_number=daily_queue_numbers[cache_key],
                                     parity=subject_parity,
@@ -172,7 +171,6 @@ async def parser(form_education: str) -> None:
                                     teacher=None,
                                     daily_schedule_id=daily_schedule.id,
                                 )
-                                await session.flush()
 
                                 daily_queue_numbers[cache_key] += 1
 

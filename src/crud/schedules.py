@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -40,14 +40,11 @@ class ScheduleService:
         result = await self.session.execute(stmt)
         schedule = result.scalar_one_or_none()
 
-        if not schedule:
-            logger.debug(
-                f"Расписание для {form_education} {faculty} {group} не найдено"
-            )
-
         return schedule
 
-    def add_schedule(self, form_education: str, faculty: str, group: str) -> Schedule:
+    async def add_schedule(
+        self, form_education: str, faculty: str, group: str
+    ) -> Schedule:
         """Добавляет расписание в сессию БЕЗ коммита"""
         schedule = Schedule(
             form_education=form_education,
@@ -55,58 +52,17 @@ class ScheduleService:
             group=group,
         )
         self.session.add(schedule)
+        await self.session.flush()
         return schedule
 
-    async def create_schedule(
-        self, form_education: str, faculty: str, group: str
-    ) -> Schedule:
-        """Функция для создания расписания"""
-        schedule = Schedule(
-            form_education=form_education,
-            faculty=faculty,
-            group=group,
-        )
-        self.session.add(schedule)
-
-        try:
-            await self.session.commit()
-        except Exception as e:
-            await self.session.rollback()
-            logger.error(f"Ошибка при сохранении расписания: {e}")
-        await self.session.refresh(schedule)
-        return schedule
-
-    async def update_schedule(self):
-        """Функция для обновления расписания"""
-        pass
-
-    async def delete_schedule(self):
-        """Функция для удаления расписания"""
-        pass
-
-    async def get_daily_schedule(self):
-        """Функция для получения расписания на день"""
-        pass
-
-    def add_daily_schedule(self, name: str, schedule_id: int) -> DailySchedule:
+    async def add_daily_schedule(self, name: str, schedule_id: int) -> DailySchedule:
         """Функция для создания расписания на день БЕЗ коммита"""
         daily_schedule = DailySchedule(name=name, schedule_id=schedule_id)
         self.session.add(daily_schedule)
+        await self.session.flush()
         return daily_schedule
 
-    async def update_daily_schedule(self):
-        """Функция для обновления расписания на день"""
-        pass
-
-    async def delete_daily_schedule(self):
-        """Функция для удаления расписания на день"""
-        pass
-
-    async def get_subject(self):
-        """Функция для получения предмета"""
-        pass
-
-    def add_subject(
+    async def add_subject(
         self,
         name: str,
         queue_number: int,
@@ -127,17 +83,10 @@ class ScheduleService:
             daily_schedule_id=daily_schedule_id,
         )
         self.session.add(subject)
+        await self.session.flush()
         return subject
 
-    async def update_subject(self):
-        """Функция для обновления предмета"""
-        pass
-
-    async def delete_subject(self):
-        """Функция для удаления предмета"""
-        pass
-
-    async def commit(self):
+    async def commit(self) -> None:
         """Явный коммит всех накопленных изменений"""
         try:
             await self.session.commit()
@@ -145,3 +94,10 @@ class ScheduleService:
             await self.session.rollback()
             logger.error(f"Ошибка при сохранении: {e}")
             raise
+
+    async def clear_schedule_content(self, schedule_id: int) -> None:
+        """Удаляет все daily_schedules и subjects для обновления расписания"""
+
+        stmt = delete(DailySchedule).where(DailySchedule.schedule_id == schedule_id)
+        await self.session.execute(stmt)
+        await self.session.flush()
