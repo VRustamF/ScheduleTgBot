@@ -38,7 +38,7 @@ def get_merged_value(ws, r: int, c: int) -> str | None:
 
 async def parser(form_education: str) -> None:
     """Функция, которая парсит расписание всех курсов и сохраняет их в json"""
-    async for session in db_helper.session_getter():
+    async with db_helper.session_factory() as session:
         schedule_path = settings.schedule.path.format(schedule_dir=form_education)
         file_path = Path(f"{BASE_DIR}/{schedule_path}")
         filenames = await aiofiles.os.listdir(file_path)
