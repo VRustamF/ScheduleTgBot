@@ -36,11 +36,6 @@ class DataBaseHelper:
             autocommit=False,
         )
 
-    async def session_getter(self) -> AsyncGenerator[AsyncSession, None]:
-        """Создаёт сессию для работы с БД. После выполнения работы сессия автоматически закрывается"""
-        async with self.session_factory() as session:
-            yield session
-
     async def dispose(self):
         """Закрывает соединения с БД"""
         await self.engine.dispose()
