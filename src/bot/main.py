@@ -1,5 +1,8 @@
+import sys
 import asyncio
 import logging
+import signal
+import contextlib
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -27,21 +30,42 @@ async def main() -> None:
     )
     dp = Dispatcher(storage=storage)
 
+    shutdown_event = asyncio.Event()
+
+    def _signal_handler(sig, frame=None):
+        logger.info(f"Received signal {sig}, shutting down...")
+        shutdown_event.set()
+
+    if sys.platform == "win32":
+        # Для windows
+        signal.signal(signal.SIGTERM, _signal_handler)
+        signal.signal(signal.SIGINT, _signal_handler)
+    else:
+        # Для unix
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, _signal_handler)
+
     logger.info("Starting bot...")
 
     await set_main_menu(bot=bot)
-
     dp.include_router(users_router)
+    await bot.delete_webhook(drop_pending_updates=True)
+    polling_task = asyncio.create_task(dp.start_polling(bot))
+    logger.info("Bot started")
 
-    try:
-        await bot.delete_webhook(drop_pending_updates=True)
-        await dp.start_polling(bot)
-        logger.info("Bot started")
-    finally:
-        # Закрываем соединения при завершении
-        await db_helper.dispose()
-        await bot.session.close()
-        logger.info("Bot stopped")
+    await shutdown_event.wait()
+
+    await dp.stop_polling()
+
+    with contextlib.suppress(asyncio.CancelledError):
+        await polling_task
+
+    # Закрываем соединения при завершении
+    await dp.storage.close()
+    await db_helper.dispose()
+    await bot.session.close()
+    logger.info("Bot stopped")
 
 
 if __name__ == "__main__":
