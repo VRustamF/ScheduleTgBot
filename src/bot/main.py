@@ -1,14 +1,12 @@
-import sys
 import asyncio
 import logging
-import signal
-import contextlib
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
+from bot.middlewares.db import DatabaseMiddleware
 from core import settings, db_helper
 from bot.keyboards.main_keyboard import set_main_menu
 
@@ -30,42 +28,23 @@ async def main() -> None:
     )
     dp = Dispatcher(storage=storage)
 
-    shutdown_event = asyncio.Event()
+    # Хук на старт
+    @dp.startup()
+    async def on_startup():
+        await set_main_menu(bot=bot)
+        logger.info("Bot started")
 
-    def _signal_handler(sig, frame=None):
-        logger.info(f"Received signal {sig}, shutting down...")
-        shutdown_event.set()
+    # Хук на остановку — закрываем только то, что aiogram не закрывает сам
+    @dp.shutdown()
+    async def on_shutdown():
+        await db_helper.dispose()
+        logger.info("Bot stopped")
 
-    if sys.platform == "win32":
-        # Для windows
-        signal.signal(signal.SIGTERM, _signal_handler)
-        signal.signal(signal.SIGINT, _signal_handler)
-    else:
-        # Для unix
-        loop = asyncio.get_running_loop()
-        for sig in (signal.SIGTERM, signal.SIGINT):
-            loop.add_signal_handler(sig, _signal_handler)
-
-    logger.info("Starting bot...")
-
-    await set_main_menu(bot=bot)
     dp.include_router(users_router)
+    dp.update.middleware(DatabaseMiddleware())
+
     await bot.delete_webhook(drop_pending_updates=True)
-    polling_task = asyncio.create_task(dp.start_polling(bot))
-    logger.info("Bot started")
-
-    await shutdown_event.wait()
-
-    await dp.stop_polling()
-
-    with contextlib.suppress(asyncio.CancelledError):
-        await polling_task
-
-    # Закрываем соединения при завершении
-    await dp.storage.close()
-    await db_helper.dispose()
-    await bot.session.close()
-    logger.info("Bot stopped")
+    await dp.start_polling(bot)
 
 
 if __name__ == "__main__":
