@@ -31,10 +31,11 @@ LEXICON = {
 📖 {subject_name}  
 🏛 Аудитория: {aud}
 """,
-    "weekly_schedule": "Расписание на неделю для группы <b>{current_group}</b>\n\n"
-    "<blockquote>{weekly_schedule}</blockquote>\n\n"
-    "Нажмите на <b>{parity}</b> чтобы сменить чётность.",
-    "nothing": "<blockquote>Сегодня пар нет.</blockquote>",
+    "weekly_schedule_message": "Расписание на неделю для группы: <b>{group_name}</b>\n\n"
+    "{week}: <b>{current_week}</b>\n\n{weekly_schedule}"
+    "Нажмите на <b>Сменить неделю</b> чтобы сменить чётность.",
+    "daily_schedule": "<blockquote>День: <b>{day}</b>\n\n{schedule}</blockquote>\n\n",
+    "nothing": "<blockquote>Похоже пар нет.</blockquote>",
 }
 
 LEXICON_INLINE_KEYBOARDS_TYPES = {
