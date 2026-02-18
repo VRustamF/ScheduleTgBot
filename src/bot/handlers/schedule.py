@@ -155,7 +155,9 @@ async def process_group_selection(
 
 
 @schedule_router.callback_query(F.data.startswith("weekly:"))
-async def process_weekly_schedule(callback: CallbackQuery, session: AsyncSession):
+async def process_weekly_schedule(
+    callback: CallbackQuery, state: FSMContext, session: AsyncSession
+):
     """Хендлер для обработки запроса на недельное расписание. Отправляет расписание на неделю."""
 
     logger.info(f"Пользователь {callback.from_user.id} запросил недельное расписание")
@@ -174,6 +176,8 @@ async def process_weekly_schedule(callback: CallbackQuery, session: AsyncSession
     message = LEXICON["weekly_schedule_message"]
 
     keyboard: InlineKeyboardMarkup = await create_weekly_kb(parity_count=parity_count)
+
+    await state.set_state(ScheduleStates.read_weekly_schedule)
 
     sent_message = await callback.message.edit_text(
         text=message.format(
@@ -333,7 +337,40 @@ async def process_back_button(
 
     current_state = await state.get_state()
 
-    if current_state == ScheduleStates.read_schedule:
+    if current_state == ScheduleStates.read_weekly_schedule.state:
+        await state.set_state(ScheduleStates.read_schedule)
+
+        service = UserService(session=session)
+        user = await service.get_user(user_id=callback.from_user.id)
+        group = str(user.group)
+
+        schedule, today_count, parity_count = await daily_schedule_maker(
+            group=group,
+            faculty=str(user.faculty),
+            form_education=str(user.form_education),
+            session=session,
+        )
+
+        message = LEXICON["schedule_message"]
+        keyboard: InlineKeyboardMarkup = await create_pagination_kb(
+            current_day=today_count,
+            parity_count=parity_count,
+        )
+
+        sent_message = await callback.message.edit_text(
+            text=message.format(
+                group_name=group,
+                week="Текущая неделя",
+                current_week=LEXICON_PARITY[parity_count],
+                day=LEXICON_DAYS_RU[today_count],
+                final_schedule=schedule if schedule else LEXICON["nothing"],
+                current_day=LEXICON_DAYS_RU[today_count],
+            ),
+            reply_markup=keyboard,
+        )
+        await callback.answer()
+
+    elif current_state == ScheduleStates.read_schedule.state:
         await state.set_state(ScheduleStates.choosing_group)
 
         service = UserService(session=session)
