@@ -1,4 +1,4 @@
-from core.db import Subjects, DailySchedules, WeeklySchedules, AllSchedules
+from core.db_deprecated import Subjects, DailySchedules, WeeklySchedules, AllSchedules
 
 
 def add_subject(

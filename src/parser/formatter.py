@@ -139,3 +139,6 @@ async def formatter(form_education: str) -> None:
 async def start_formatter():
     tasks = [formatter(form_education=key) for key in settings.zgy.urls.keys()]
     await asyncio.gather(*tasks, return_exceptions=True)
+
+
+asyncio.run(start_formatter())
