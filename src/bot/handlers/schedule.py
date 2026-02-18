@@ -19,6 +19,7 @@ from bot.utils.keyboard_makers import (
     create_faculties_kb,
     create_groups_kb,
     create_pagination_kb,
+    create_forms_education_kb,
 )
 
 schedule_router = Router()
@@ -105,7 +106,9 @@ async def process_faculty_selection(
     ScheduleStates.choosing_group,
     F.data.startswith(f"{LEXICON_INLINE_KEYBOARDS_TYPES["groups"]}:"),
 )
-async def process_group_selection(callback: CallbackQuery, session: AsyncSession):
+async def process_group_selection(
+    callback: CallbackQuery, state: FSMContext, session: AsyncSession
+):
     """Хендлер для обработки выбора Группы. Отправляет расписание."""
 
     group_name = callback.data.split(":")[1]
@@ -116,6 +119,8 @@ async def process_group_selection(callback: CallbackQuery, session: AsyncSession
     user = await service.get_user(user_id=callback.from_user.id)
 
     await service.update_user(user_id=callback.from_user.id, data={"group": group_name})
+
+    await state.set_state(ScheduleStates.read_schedule)
 
     schedule, today_count, parity_count = await schedule_maker(
         group=group_name,
@@ -236,6 +241,77 @@ async def process_change_day_parity(callback: CallbackQuery, session: AsyncSessi
         reply_markup=keyboard,
     )
     await callback.answer()
+
+
+@schedule_router.callback_query(F.data.startswith("back"))
+async def process_back_button(
+    callback: CallbackQuery, state: FSMContext, session: AsyncSession
+):
+    """Хендлер для кнопки "Назад". Возвращает пользователя к выбору дня недели."""
+
+    logger.info(f"Пользователь {callback.from_user.id} выбрал кнопку 'Назад'")
+
+    current_state = await state.get_state()
+
+    if current_state == ScheduleStates.read_schedule:
+        await state.set_state(ScheduleStates.choosing_group)
+
+        service = UserService(session=session)
+        user = await service.get_user(user_id=callback.from_user.id)
+
+        await service.delete_group(user_id=callback.from_user.id)
+
+        keyboard: InlineKeyboardMarkup = await create_groups_kb(
+            form_education=str(user.form_education),
+            faculty=str(user.faculty),
+            session=session,
+        )
+
+        message = LEXICON["choice_group"]
+
+        sent_message = await callback.message.edit_text(
+            text=message.format(faculty_name=user.faculty),
+            reply_markup=keyboard,
+        )
+
+    elif current_state == ScheduleStates.choosing_group.state:
+        await state.set_state(ScheduleStates.choosing_faculty)
+
+        service = UserService(session=session)
+        user = await service.get_user(user_id=callback.from_user.id)
+
+        keyboard: InlineKeyboardMarkup = await create_faculties_kb(
+            form_education=str(user.form_education),
+            session=session,
+        )
+
+        service = UserService(session=session)
+
+        await service.delete_faculty(user_id=callback.from_user.id)
+
+        message = LEXICON["choice_faculty"]
+
+        sent_message = await callback.message.edit_text(
+            text=message.format(form_education_name=user.form_education),
+            reply_markup=keyboard,
+        )
+
+    elif current_state == ScheduleStates.choosing_faculty:
+        await state.set_state(ScheduleStates.choosing_forms_education)
+
+        service = UserService(session=session)
+
+        keyboard: InlineKeyboardMarkup = await create_forms_education_kb(
+            session=session
+        )
+
+        await service.delete_form_education(user_id=callback.from_user.id)
+
+        message = LEXICON["choice_forms_education"]
+
+        sent_message = await callback.message.edit_text(
+            text=message, reply_markup=keyboard
+        )
 
 
 @schedule_router.message()

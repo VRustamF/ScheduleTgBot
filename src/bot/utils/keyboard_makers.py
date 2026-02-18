@@ -13,7 +13,10 @@ async def create_forms_education_kb(session: AsyncSession) -> InlineKeyboardMark
     forms_education = await service.get_forms_education()
 
     keyboard = create_inline_kb(
-        1, LEXICON_INLINE_KEYBOARDS_TYPES["forms_education"], *forms_education
+        1,
+        LEXICON_INLINE_KEYBOARDS_TYPES["forms_education"],
+        True,
+        *forms_education,
     )
 
     return keyboard
@@ -28,7 +31,10 @@ async def create_faculties_kb(
     faculties = await service.get_faculties(form_education=form_education)
 
     keyboard = create_inline_kb(
-        3, LEXICON_INLINE_KEYBOARDS_TYPES["faculties"], *faculties
+        3,
+        LEXICON_INLINE_KEYBOARDS_TYPES["faculties"],
+        False,
+        *faculties,
     )
 
     return keyboard
@@ -42,7 +48,12 @@ async def create_groups_kb(
     service = ScheduleService(session=session)
     groups = await service.get_groups(form_education=form_education, faculty=faculty)
 
-    keyboard = create_inline_kb(2, LEXICON_INLINE_KEYBOARDS_TYPES["groups"], *groups)
+    keyboard = create_inline_kb(
+        2,
+        LEXICON_INLINE_KEYBOARDS_TYPES["groups"],
+        False,
+        *groups,
+    )
 
     return keyboard
 
@@ -67,6 +78,11 @@ async def create_pagination_kb(
             {f"next:{current_day + 1}:{parity_count}": ">>"}
         )  # Кнопка "Вперед"
 
-    keyboard = create_inline_kb(3, None, **buttons)
+    keyboard = create_inline_kb(
+        3,
+        None,
+        False,
+        **buttons,
+    )
 
     return keyboard

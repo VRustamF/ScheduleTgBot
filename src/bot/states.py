@@ -5,3 +5,4 @@ class ScheduleStates(StatesGroup):
     choosing_forms_education = State()
     choosing_faculty = State()
     choosing_group = State()
+    read_schedule = State()

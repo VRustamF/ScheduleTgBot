@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -45,3 +45,21 @@ class UserService:
             setattr(user, name, value)
 
         return user
+
+    async def delete_form_education(self, user_id: int) -> None:
+        """Функция для удаления формы обучения у пользователя"""
+
+        stmt = update(User).where(User.user_id == user_id).values(form_education=None)
+        await self.session.execute(stmt)
+
+    async def delete_faculty(self, user_id: int) -> None:
+        """Функция для удаления факультета у пользователя"""
+
+        stmt = update(User).where(User.user_id == user_id).values(faculty=None)
+        await self.session.execute(stmt)
+
+    async def delete_group(self, user_id: int) -> None:
+        """Функция для удаления группы у пользователя"""
+
+        stmt = update(User).where(User.user_id == user_id).values(group=None)
+        await self.session.execute(stmt)

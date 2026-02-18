@@ -49,7 +49,7 @@ async def process_start_command(
 
     if user.group:
         keyboard: InlineKeyboardMarkup = create_inline_kb(
-            1, LEXICON_INLINE_KEYBOARDS_TYPES["groups"], *[user.group]
+            1, LEXICON_INLINE_KEYBOARDS_TYPES["groups"], False, *[user.group]
         )
         msg = "свою группу"
         await state.set_state(ScheduleStates.choosing_group)
