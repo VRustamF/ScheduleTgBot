@@ -4,7 +4,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.redis import RedisStorage
 
 from bot.middlewares.db import DatabaseMiddleware
 from core import settings, db_helper
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
-    storage = MemoryStorage()
+    storage = RedisStorage.from_url(str(settings.redis.url))
 
     bot = Bot(
         token=settings.bot.token,
