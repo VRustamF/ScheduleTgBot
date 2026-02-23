@@ -41,7 +41,7 @@ async def daily_schedule_maker(
         with_details=True,
     )
 
-    if not parity_count:
+    if parity_count is None:
         parity_count = week_parity()
     parity = LEXICON_PARITY[parity_count]
 
@@ -82,7 +82,7 @@ async def weekly_schedule_maker(
         with_details=True,
     )
 
-    if not parity_count:
+    if parity_count is None:
         parity_count = week_parity()
     parity = LEXICON_PARITY[parity_count]
 
