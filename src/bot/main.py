@@ -7,10 +7,13 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 
 from bot.middlewares.db import DatabaseMiddleware
-from core import settings, db_helper
+from bot.middlewares.bot_message_memorizer import (
+    UserMessageDeleterMiddleware,
+    SingleMessageMiddleware,
+)
 from bot.keyboards.main_keyboard import set_main_menu
-
 from bot.handlers import commands_router, schedule_router
+from core import settings, db_helper
 
 logging.basicConfig(
     level=logging.getLevelName(settings.log.level),
@@ -43,6 +46,8 @@ async def main() -> None:
     dp.include_router(commands_router)
     dp.include_router(schedule_router)
     dp.update.middleware(DatabaseMiddleware())
+    dp.message.middleware(UserMessageDeleterMiddleware())
+    bot.session.middleware(SingleMessageMiddleware(dp.storage))
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)

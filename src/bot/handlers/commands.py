@@ -88,8 +88,15 @@ async def process_change_command(
 
     logger.info(f"Пользователь {message.from_user.id} ввёл команду /change")
 
+    service = UserService(session=session)
+    user_id = message.from_user.id
+
     keyboard: InlineKeyboardMarkup = await create_forms_education_kb(session=session)
-    msg = "свою форму обучения"
+
+    await service.delete_group(user_id=user_id)
+    await service.delete_faculty(user_id=user_id)
+    await service.delete_form_education(user_id=user_id)
+
     await state.set_state(ScheduleStates.choosing_forms_education)
 
     await message.answer(text=LEXICON["choice_forms_education"], reply_markup=keyboard)
