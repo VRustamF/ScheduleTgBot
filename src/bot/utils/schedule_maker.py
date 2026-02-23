@@ -51,14 +51,16 @@ async def daily_schedule_maker(
             today_count = get_today()
         today = LEXICON_DAYS_RU[today_count]
         if day.name == today:
+            queue_number = 1
             for subject in day.subjects:
                 if parity == subject.parity or not subject.parity:
                     schedule_text += LEXICON["schedule"].format(
-                        i=subject.queue_number,
+                        i=queue_number,
                         time=subject.time,
                         subject_name=subject.name,
                         aud=subject.audience,
                     )
+                    queue_number += 1
     return schedule_text, today_count, parity_count
 
 
@@ -88,14 +90,16 @@ async def weekly_schedule_maker(
     for day in schedule.daily_schedules:
         day_name = day.name
         daily_schedule_text = ""
+        queue_number = 1
         for subject in day.subjects:
             if parity == subject.parity or not subject.parity:
                 daily_schedule_text += LEXICON["schedule"].format(
-                    i=subject.queue_number,
+                    i=queue_number,
                     time=subject.time,
                     subject_name=subject.name,
                     aud=subject.audience,
                 )
+                queue_number += 1
         schedule_text += LEXICON["daily_schedule"].format(
             day=day_name, schedule=daily_schedule_text
         )

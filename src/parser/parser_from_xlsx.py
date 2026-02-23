@@ -103,6 +103,7 @@ async def parser(form_education: str) -> None:
 
                 # Начало парсинга данных о предметах
                 current_day = ""
+                past_time = ""
                 current_time = ""
                 daily_queue_numbers = defaultdict(
                     int
@@ -127,6 +128,9 @@ async def parser(form_education: str) -> None:
                             if col == day_column and cell_val.lower() != current_day:
                                 current_day = cell_val.lower()
                             elif col == time_column and cell_val != current_time:
+                                if past_time == "":
+                                    past_time = cell_val
+
                                 current_time = cell_val
                             elif pattern.match(cleaned_val):
                                 current_time = cell_val
@@ -172,7 +176,9 @@ async def parser(form_education: str) -> None:
                                     daily_schedule_id=daily_schedule.id,
                                 )
 
-                                daily_queue_numbers[cache_key] += 1
+                                if current_time != past_time:
+                                    past_time = current_time
+                                    daily_queue_numbers[cache_key] += 1
 
                 # один коммит для всех предметов файла
                 await service.commit()
