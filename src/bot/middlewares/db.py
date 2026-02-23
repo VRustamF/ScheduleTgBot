@@ -7,6 +7,8 @@ from core import db_helper
 
 
 class DatabaseMiddleware(BaseMiddleware):
+    """Мидлварь для управления сессией БД в рамках обработки одного события"""
+
     async def __call__(
         self,
         handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
