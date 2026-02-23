@@ -60,7 +60,7 @@ async def process_form_education_selection(
 
     message = LEXICON["choice_faculty"]
 
-    sent_message = await callback.message.edit_text(
+    await callback.message.edit_text(
         text=message.format(form_education_name=form_education_name),
         reply_markup=keyboard,
     )
@@ -100,7 +100,7 @@ async def process_faculty_selection(
 
     message = LEXICON["choice_group"]
 
-    sent_message = await callback.message.edit_text(
+    await callback.message.edit_text(
         text=message.format(faculty_name=faculty_name), reply_markup=keyboard
     )
 
@@ -140,7 +140,7 @@ async def process_group_selection(
         parity_count=parity_count,
     )
 
-    sent_message = await callback.message.edit_text(
+    await callback.message.edit_text(
         text=message.format(
             group_name=group_name,
             week="Текущая неделя",
@@ -179,7 +179,7 @@ async def process_weekly_schedule(
 
     await state.set_state(ScheduleStates.read_weekly_schedule)
 
-    sent_message = await callback.message.edit_text(
+    await callback.message.edit_text(
         text=message.format(
             group_name=user.group,
             week="Текущая неделя",
@@ -223,7 +223,7 @@ async def process_pagination(callback: CallbackQuery, session: AsyncSession):
 
     week = "Следующая неделя" if parity_count != week_parity() else "Текущая неделя"
 
-    sent_message = await callback.message.edit_text(
+    await callback.message.edit_text(
         text=message.format(
             group_name=user.group,
             week=week,
@@ -271,7 +271,7 @@ async def process_change_day_parity(callback: CallbackQuery, session: AsyncSessi
 
     week = "Следующая неделя" if parity_count != week_parity() else "Текущая неделя"
 
-    sent_message = await callback.message.edit_text(
+    await callback.message.edit_text(
         text=message.format(
             group_name=user.group,
             week=week,
@@ -315,7 +315,7 @@ async def process_change_day_parity(callback: CallbackQuery, session: AsyncSessi
 
     week = "Следующая неделя" if parity_count != week_parity() else "Текущая неделя"
 
-    sent_message = await callback.message.edit_text(
+    await callback.message.edit_text(
         text=message.format(
             group_name=user.group,
             week=week,
@@ -357,7 +357,7 @@ async def process_back_button(
             parity_count=parity_count,
         )
 
-        sent_message = await callback.message.edit_text(
+        await callback.message.edit_text(
             text=message.format(
                 group_name=group,
                 week="Текущая неделя",
@@ -386,7 +386,7 @@ async def process_back_button(
 
         message = LEXICON["choice_group"]
 
-        sent_message = await callback.message.edit_text(
+        await callback.message.edit_text(
             text=message.format(faculty_name=user.faculty),
             reply_markup=keyboard,
         )
@@ -408,7 +408,7 @@ async def process_back_button(
 
         message = LEXICON["choice_faculty"]
 
-        sent_message = await callback.message.edit_text(
+        await callback.message.edit_text(
             text=message.format(form_education_name=user.form_education),
             reply_markup=keyboard,
         )
@@ -426,9 +426,7 @@ async def process_back_button(
 
         message = LEXICON["choice_forms_education"]
 
-        sent_message = await callback.message.edit_text(
-            text=message, reply_markup=keyboard
-        )
+        await callback.message.edit_text(text=message, reply_markup=keyboard)
 
 
 @schedule_router.message()
