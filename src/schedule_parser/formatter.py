@@ -62,11 +62,6 @@ def find_schedule_boundaries(sheet) -> tuple[int, int]:
             end_row = r2
             break
 
-    logger.info(
-        f"В {sheet.name} границы расписания: "
-        f"строки {start_row}-{end_row-1} (всего {end_row - start_row} строк)"
-    )
-
     return start_row, end_row
 
 
@@ -123,8 +118,6 @@ async def formatter(form_education: str) -> None:
     sheet_names = book.sheet_names()
 
     for s_name in sheet_names:
-        logger.info(f"Начало копирования объединенных ячеек для факультета {s_name}")
-
         workbook: Workbook = await asyncio.to_thread(
             copy_merge_cells_to_xlsx,
             s_name=s_name,
@@ -139,6 +132,3 @@ async def formatter(form_education: str) -> None:
 async def start_formatter():
     tasks = [formatter(form_education=key) for key in settings.zgy.urls.keys()]
     await asyncio.gather(*tasks, return_exceptions=True)
-
-
-asyncio.run(start_formatter())

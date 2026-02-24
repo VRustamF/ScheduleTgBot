@@ -201,7 +201,3 @@ async def start_parser():
         logger.error(f"Ошибки при парсинге: {len(errors)}/{len(tasks)}")
         for error in errors:
             logger.error(f"Ошибка: {error}", exc_info=error)
-
-
-if __name__ == "__main__":
-    asyncio.run(start_parser())

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import BaseModel, PostgresDsn, RedisDsn
+from pydantic import BaseModel, PostgresDsn, RedisDsn, AmqpDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -53,6 +53,12 @@ class RedisConfig(BaseModel):
     url: RedisDsn
 
 
+class RabbitmqConfig(BaseModel):
+    """Настройки Rabbitmq"""
+
+    url: AmqpDsn
+
+
 class Settings(BaseSettings):
     """Основной класс с настройками всего приложения"""
 
@@ -67,6 +73,7 @@ class Settings(BaseSettings):
     bot: BotConfig
     db: DataBaseConfig
     redis: RedisConfig
+    rabbitmq: RabbitmqConfig
     zgy: ZgySiteConfig = ZgySiteConfig()
     schedule: ScheduleFileConfig = ScheduleFileConfig()
 

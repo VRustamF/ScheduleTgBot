@@ -31,7 +31,7 @@ async def download_schedule(session: aiohttp.ClientSession, key: str, url: str) 
         logger.info(f"Файл {settings.schedule.file_name} установлен.")
 
 
-async def schedule_downloader() -> None:
+async def start_schedule_downloader() -> None:
     """Параллельный парсинг расписания для всех форм обучения"""
 
     timeout = aiohttp.ClientTimeout(total=300)  # таймаут 5 минут
