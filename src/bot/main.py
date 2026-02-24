@@ -6,10 +6,14 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 
-from core.config import settings
+from bot.middlewares.db import DatabaseMiddleware
+from bot.middlewares.bot_message_memorizer import (
+    UserMessageDeleterMiddleware,
+    SingleMessageMiddleware,
+)
 from bot.keyboards.main_keyboard import set_main_menu
-
-from bot.handlers import users_router
+from bot.handlers import commands_router, schedule_router
+from core import settings, db_helper, broker
 
 logging.basicConfig(
     level=logging.getLevelName(settings.log.level),
@@ -19,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
-    storage = RedisStorage.from_url(settings.redis.url)
+    storage = RedisStorage.from_url(str(settings.redis.url))
 
     bot = Bot(
         token=settings.bot.token,
@@ -27,11 +31,25 @@ async def main() -> None:
     )
     dp = Dispatcher(storage=storage)
 
-    logger.info("Starting bot...")
+    # Старт
+    @dp.startup()
+    async def on_startup():
+        await broker.startup()
+        await set_main_menu(bot=bot)
+        logger.info("Bot started")
 
-    await set_main_menu(bot=bot)
+    # Остановка — закрываем только то, что aiogram не закрывает сам
+    @dp.shutdown()
+    async def on_shutdown():
+        await db_helper.dispose()
+        await broker.shutdown()
+        logger.info("Bot stopped")
 
-    dp.include_router(users_router)
+    dp.include_router(commands_router)
+    dp.include_router(schedule_router)
+    dp.update.middleware(DatabaseMiddleware())
+    dp.message.middleware(UserMessageDeleterMiddleware())
+    bot.session.middleware(SingleMessageMiddleware(dp.storage))
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
