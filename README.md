@@ -27,35 +27,34 @@ https://docs.docker.com/get-started/get-docker/
 
 ## 4. Шаг: создайте в папке src файл `.env`
 ```
-# Zgy
-ZGY__URL=https://norvuz.ru/upload/timetable/1-ochnoe.xls
+# Postgresql
+DB__URL=postgresql+asyncpg://admin:schedule@db:5432/schedule_db
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=schedule
+POSTGRES_DB=schedule_db
 
 # Logging
 LOG__LEVEL=DEBUG
 LOG__FORMAT="[%(asctime)s] #%(levelname)-8s %(filename)s:%(lineno)d - %(name)s - %(message)s"
 
-# Bot (токен бота, которого я отправлял вчера, желательно поменять)
-BOT__TOKEN=8088051328:AAHIxywyMjwi7WeKESF7y6ZMBIgUHCAe1Vg 
+# Bot
+BOT__TOKEN=8088051328:AAHIxywyMjwi7WeKESF7y6ZMBIgUHCAe1Vg
 
 # Redis
-REDIS__URL=redis://localhost:6379
+REDIS__URL=redis://redis:6379
+
+# RabbitMQ
+RABBITMQ_DEFAULT_USER=admin
+RABBITMQ_DEFAULT_PASS=lizaloxx
+RABBITMQ__URL=amqp://admin:lizaloxx@rabbitmq:5672/
 ```
 
 ## 5. Шаг: запуск докера
 - ### В консоль введите
 ```
-docker compose up -d
+docker compose up -d --build
 ```
 
-## 6. Шаг: создание расписания
-- ### Запустите функцию `parser()` в `src/parser/parser_from_xlsx.py/`
-
-## 7. Шаг: запуск бота
-- ### Запустите `main` файл в `src/bot/main.py/`
-
 # Что нужно добавить по моему мнению
-- ### Считывать все файлв расписаний с сайта (Макс)
-- ### Автоматически парсить данные каждые 10 минут (Некит, если не хочет, то тоже Макс)
-- ### Чтобы логи выводились в tg канал (Дима)
-- ### Перенести всё в бд (Я)
-- ### Сделать рассписание для преподов (Я наверное)
+- ### Чтобы логи выводились в tg канал
+- ### Сделать рассписание для преподов
