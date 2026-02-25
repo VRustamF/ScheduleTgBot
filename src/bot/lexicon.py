@@ -2,14 +2,14 @@ LEXICON_COMMANDS = {
     "/start": "Запуск бота",
     "/change": "Сменить группу",
     # "/help": "Помощь",
-}
+}  # Меню пользователей
 
 LEXICON_ADMIN_COMMANDS = {
     "/start": "Запуск бота",
     "/change": "Сменить группу",
     "/panel": "Открыть панель администратора",
     # "/help": "Помощь",
-}
+}  # Меню админа
 
 LEXICON = {
     "start": "🎓 Привет! Я — бот-расписание.\n\n"
@@ -43,13 +43,13 @@ LEXICON = {
     "Нажмите на <b>Сменить неделю</b> чтобы сменить чётность.",
     "daily_schedule": "<blockquote>День: <b>{day}</b>\n\n{schedule}</blockquote>\n\n",
     "nothing": "<blockquote>Похоже пар нет.</blockquote>",
-}
+}  # Текст отправляемый пользователям
 
 LEXICON_INLINE_KEYBOARDS_TYPES = {
     "forms_education": "fed",
     "faculties": "fac",
     "groups": "gr",
-}
+}  # Типы inline клавиатуры
 
 LEXICON_DAYS_RU = {
     1: "понедельник",
@@ -59,9 +59,9 @@ LEXICON_DAYS_RU = {
     5: "пятница",
     6: "суббота",
     7: "воскресенье",
-}
+}  # Перевод дней недели в цифровое значение
 
 LEXICON_PARITY = {
     0: "нечетная",
     1: "четная",
-}
+}  # Перевод чётности недели в цифровое значение
