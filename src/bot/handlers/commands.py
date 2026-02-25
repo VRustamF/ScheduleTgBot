@@ -16,6 +16,7 @@ from bot.utils.keyboard_makers import (
 )
 from bot.states import ScheduleStates
 from bot.keyboards.inline_kb_builder import create_inline_kb
+from bot.filters import is_admin
 
 commands_router = Router()
 
@@ -100,3 +101,14 @@ async def process_change_command(
     await state.set_state(ScheduleStates.choosing_forms_education)
 
     await message.answer(text=LEXICON["choice_forms_education"], reply_markup=keyboard)
+
+
+@commands_router.message(is_admin, Command(commands="panel"))
+async def process_admin_panel_command(
+    message: Message,
+    state: FSMContext,
+    session: AsyncSession,
+):
+    """Хендлер для команды /panel. Отправляет пользователю админ панель."""
+
+    await message.answer(text="Ты админ")

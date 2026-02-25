@@ -11,8 +11,8 @@ from bot.middlewares.bot_message_memorizer import (
     UserMessageDeleterMiddleware,
     SingleMessageMiddleware,
 )
-from bot.keyboards.main_keyboard import set_main_menu
-from bot.handlers import commands_router, schedule_router
+from bot.keyboards.main_keyboard import set_main_menu, set_admin_main_menu
+from bot.handlers import commands_router, schedule_router, admin_panel_router
 from core import settings, db_helper, broker
 
 logging.basicConfig(
@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
+    """Функция для запуска бота"""
+
     storage = RedisStorage.from_url(str(settings.redis.url))
 
     bot = Bot(
@@ -36,6 +38,9 @@ async def main() -> None:
     async def on_startup():
         await broker.startup()
         await set_main_menu(bot=bot)
+
+        for admin_id in settings.admins_panel.admins:
+            await set_admin_main_menu(bot=bot, admin_id=admin_id)
         logger.info("Bot started")
 
     # Остановка — закрываем только то, что aiogram не закрывает сам
@@ -47,6 +52,7 @@ async def main() -> None:
 
     dp.include_router(commands_router)
     dp.include_router(schedule_router)
+    dp.include_router(admin_panel_router)
     dp.update.middleware(DatabaseMiddleware())
     dp.message.middleware(UserMessageDeleterMiddleware())
     bot.session.middleware(SingleMessageMiddleware(dp.storage))

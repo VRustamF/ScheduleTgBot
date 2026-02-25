@@ -2,6 +2,8 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class ScheduleStates(StatesGroup):
+    """Состояния бота"""
+
     choosing_forms_education = State()
     choosing_faculty = State()
     choosing_group = State()

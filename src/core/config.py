@@ -28,6 +28,12 @@ class ScheduleFileConfig(BaseModel):
     final_schedule: str = "schedule.json"  # Финальный файл расписания
 
 
+class AdminPanelConfig(BaseModel):
+    """Настройки админ панели"""
+
+    admins: set[int] = {1956353066}  # Список ID администраторов
+
+
 class LoggerConfig(BaseModel):
     """Настройки логирования"""
 
@@ -74,6 +80,7 @@ class Settings(BaseSettings):
     db: DataBaseConfig
     redis: RedisConfig
     rabbitmq: RabbitmqConfig
+    admins_panel: AdminPanelConfig = AdminPanelConfig()
     zgy: ZgySiteConfig = ZgySiteConfig()
     schedule: ScheduleFileConfig = ScheduleFileConfig()
 
