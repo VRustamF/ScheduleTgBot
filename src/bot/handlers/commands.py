@@ -8,13 +8,18 @@ from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crud.users import UserService
-from bot.lexicon import LEXICON, LEXICON_INLINE_KEYBOARDS_TYPES
+from bot.lexicon import (
+    LEXICON,
+    LEXICON_INLINE_KEYBOARDS_TYPES,
+    LEXICON_ADMIN,
+    LEXICON_ADMIN_INLINE_KEYBOARD,
+)
 from bot.utils.keyboard_makers import (
     create_forms_education_kb,
     create_faculties_kb,
     create_groups_kb,
 )
-from bot.states import ScheduleStates
+from bot.states import ScheduleStates, AdminStates
 from bot.keyboards.inline_kb_builder import create_inline_kb
 from bot.filters import is_admin
 
@@ -111,4 +116,13 @@ async def process_admin_panel_command(
 ):
     """Хендлер для команды /panel. Отправляет пользователю админ панель."""
 
-    await message.answer(text="Ты админ")
+    keyboard: InlineKeyboardMarkup = create_inline_kb(
+        1,
+        None,
+        True,
+        **LEXICON_ADMIN_INLINE_KEYBOARD,
+    )
+
+    await state.set_state(AdminStates.admin_main_manu)
+
+    await message.answer(text=LEXICON_ADMIN["panel"], reply_markup=keyboard)

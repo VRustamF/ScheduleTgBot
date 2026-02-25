@@ -45,11 +45,27 @@ LEXICON = {
     "nothing": "<blockquote>Похоже пар нет.</blockquote>",
 }  # Текст отправляемый пользователям
 
+LEXICON_ADMIN = {
+    "panel": "Здравствуй, Повелитель!\n\n👇 Список приказов, которые я могу выполнить"
+}  # Текст отправляемый админам
+
 LEXICON_INLINE_KEYBOARDS_TYPES = {
     "forms_education": "fed",
     "faculties": "fac",
     "groups": "gr",
 }  # Типы inline клавиатуры
+
+LEXICON_ADMIN_INLINE_KEYBOARD = {
+    "update": "Обновить расписание",
+    "ban": "Забанить пользователя",
+    "unban": "Разбанить пользователя",
+    "unban_all": "Разбанить всех",
+    "write": "Написать пользователю",
+    "write_all": "Написать всем",
+    "stop": "Остановить работу бота",
+    "user_list": "Список пользователей",
+}
+
 
 LEXICON_DAYS_RU = {
     1: "понедельник",

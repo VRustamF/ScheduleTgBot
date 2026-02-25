@@ -154,7 +154,10 @@ async def process_group_selection(
     await callback.answer()
 
 
-@schedule_router.callback_query(F.data.startswith("weekly:"))
+@schedule_router.callback_query(
+    ScheduleStates.read_schedule,
+    F.data.startswith("weekly:"),
+)
 async def process_weekly_schedule(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
@@ -191,7 +194,10 @@ async def process_weekly_schedule(
     await callback.answer()
 
 
-@schedule_router.callback_query(F.data.startswith("prev:") | F.data.startswith("next:"))
+@schedule_router.callback_query(
+    ScheduleStates.read_schedule,
+    F.data.startswith("prev:") | F.data.startswith("next:"),
+)
 async def process_pagination(callback: CallbackQuery, session: AsyncSession):
     """Хендлер для обработки пагинации. Отправляет расписание на другой день."""
 
@@ -237,7 +243,10 @@ async def process_pagination(callback: CallbackQuery, session: AsyncSession):
     await callback.answer()
 
 
-@schedule_router.callback_query(F.data.startswith("current:"))
+@schedule_router.callback_query(
+    ScheduleStates.read_schedule,
+    F.data.startswith("current:"),
+)
 async def process_change_day_parity(callback: CallbackQuery, session: AsyncSession):
     """Хендлер отправки расписания для того же дня следующей по четности недели."""
 
@@ -285,7 +294,10 @@ async def process_change_day_parity(callback: CallbackQuery, session: AsyncSessi
     await callback.answer()
 
 
-@schedule_router.callback_query(F.data.startswith("current_week:"))
+@schedule_router.callback_query(
+    ScheduleStates.read_weekly_schedule,
+    F.data.startswith("current_week:"),
+)
 async def process_change_day_parity(callback: CallbackQuery, session: AsyncSession):
     """Хендлер отправки расписания для следующей по четности недели."""
 
@@ -331,7 +343,7 @@ async def process_change_day_parity(callback: CallbackQuery, session: AsyncSessi
 async def process_back_button(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для кнопки "Назад". Возвращает пользователя к выбору дня недели."""
+    """Хендлер для кнопки "Назад"."""
 
     logger.info(f"Пользователь {callback.from_user.id} выбрал кнопку 'Назад'")
 

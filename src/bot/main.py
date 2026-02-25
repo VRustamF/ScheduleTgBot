@@ -51,8 +51,8 @@ async def main() -> None:
         logger.info("Bot stopped")
 
     dp.include_router(commands_router)
-    dp.include_router(schedule_router)
     dp.include_router(admin_panel_router)
+    dp.include_router(schedule_router)
     dp.update.middleware(DatabaseMiddleware())
     dp.message.middleware(UserMessageDeleterMiddleware())
     bot.session.middleware(SingleMessageMiddleware(dp.storage))
