@@ -23,7 +23,12 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.drop_index(op.f("ix_bot_messages_message_id"), table_name="bot_messages")
     op.drop_table("bot_messages")
-    op.add_column("users", sa.Column("is_baned", sa.Boolean(), nullable=False))
+    op.add_column(
+        "users",
+        sa.Column(
+            "is_baned", sa.Boolean(), nullable=False, server_default=sa.text("false")
+        ),
+    )
 
 
 def downgrade() -> None:
