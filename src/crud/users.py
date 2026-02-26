@@ -1,7 +1,6 @@
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 from core.db import User
 
 
@@ -11,6 +10,14 @@ class UserService:
     def __init__(self, session: AsyncSession):
         """Получаем сессию"""
         self.session = session
+
+    async def get_users(self) -> list[User]:
+        """Функция для получения пользователей"""
+
+        stmt = select(User).order_by(User.id)
+        users = await self.session.scalars(stmt)
+
+        return list(users.all())
 
     async def get_user(self, user_id: int) -> User | None:
         """Функция для получения пользователя"""
@@ -62,4 +69,16 @@ class UserService:
         """Функция для удаления группы у пользователя"""
 
         stmt = update(User).where(User.user_id == user_id).values(group=None)
+        await self.session.execute(stmt)
+
+    async def ban_user(self, user_id: int) -> None:
+        """Функция для бана пользователя"""
+
+        stmt = update(User).where(User.user_id == user_id).values(is_baned=True)
+        await self.session.execute(stmt)
+
+    async def unban_user(self, user_id: int) -> None:
+        """Функция для разбана пользователя"""
+
+        stmt = update(User).where(User.user_id == user_id).values(is_baned=False)
         await self.session.execute(stmt)

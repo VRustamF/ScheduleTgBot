@@ -29,7 +29,14 @@ class User(Base):
     is_baned: Mapped[bool] = mapped_column(default=False)
 
     def __repr__(self):
-        return f"User {self.id}: user_id={self.user_id}, username={self.username}"
+        return (
+            f"Пользователь {self.username}:\n"
+            f"id: {self.user_id}\n"
+            f"Форма обучения: {self.form_education if self.form_education else "Не выбрано"}\n"
+            f"Факультет: {self.faculty if self.faculty else "Не выбрано"}\n"
+            f"Группа: {self.group if self.group else "Не выбрано"}\n"
+            f"Статус: {"Забанен" if self.is_baned else "Не забанен"}\n\n"
+        )
 
 
 class Subject(Base):

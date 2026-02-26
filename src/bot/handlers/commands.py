@@ -1,6 +1,6 @@
 import logging
 
-from aiogram import Router
+from aiogram import Router, Bot
 from aiogram.types import Message, InlineKeyboardMarkup
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
@@ -20,6 +20,7 @@ from bot.utils.keyboard_makers import (
     create_groups_kb,
 )
 from bot.states import ScheduleStates, AdminStates
+from bot.utils.sender_messages import send_message_to_user
 from bot.keyboards.inline_kb_builder import create_inline_kb
 from bot.filters import is_admin
 
@@ -112,9 +113,10 @@ async def process_change_command(
 async def process_admin_panel_command(
     message: Message,
     state: FSMContext,
-    session: AsyncSession,
 ):
     """Хендлер для команды /panel. Отправляет пользователю админ панель."""
+
+    logger.info(f"Админ {message.from_user.id} ввел команду /panel")
 
     keyboard: InlineKeyboardMarkup = create_inline_kb(
         1,
@@ -126,3 +128,127 @@ async def process_admin_panel_command(
     await state.set_state(AdminStates.admin_main_manu)
 
     await message.answer(text=LEXICON_ADMIN["panel"], reply_markup=keyboard)
+
+
+@commands_router.message(is_admin, Command(commands="ban"))
+async def process_ban_user_command(
+    message: Message,
+    session: AsyncSession,
+):
+    """Хендлер для бана пользователя"""
+
+    logger.info(f"Админ {message.from_user.id} ввел команду /ban")
+
+    user_id = int(message.text.split(" ")[1])
+
+    service = UserService(session=session)
+
+    user = await service.get_user(user_id=user_id)
+
+    if not user:
+        await message.answer(text=LEXICON_ADMIN["not_banned"].format(user_id=user_id))
+    else:
+        await service.ban_user(user_id=user_id)
+        await message.answer(text=LEXICON_ADMIN["banned"].format(user_id=user_id))
+
+
+@commands_router.message(is_admin, Command(commands="unban"))
+async def process_unban_user_command(
+    message: Message,
+    session: AsyncSession,
+):
+    """Хендлер для разбана пользователя"""
+
+    logger.info(f"Админ {message.from_user.id} ввел команду /unban")
+
+    user_id = int(message.text.split(" ")[1])
+
+    service = UserService(session=session)
+
+    user = await service.get_user(user_id=user_id)
+
+    if not user:
+        await message.answer(text=LEXICON_ADMIN["not_found"].format(user_id=user_id))
+    else:
+        await service.unban_user(user_id=user_id)
+        await message.answer(text=LEXICON_ADMIN["unbanned"].format(user_id=user_id))
+
+
+@commands_router.message(is_admin, Command(commands="write"))
+async def process_write_user_command(
+    message: Message,
+    session: AsyncSession,
+    bot: Bot,
+):
+    """Хендлер для отправки сообщения пользователю"""
+
+    logger.info(f"Админ {message.from_user.id} ввел команду /write")
+
+    user_id = int(message.text.split(" ")[1].split(":")[0])
+
+    service = UserService(session=session)
+
+    user = await service.get_user(user_id=user_id)
+
+    if not user:
+        await message.answer(text=LEXICON_ADMIN["not_found"].format(user_id=user_id))
+    else:
+        text = message.text.split("::")[1]
+
+        await send_message_to_user(bot=bot, user_id=user_id, text=text)
+        await message.answer(text=LEXICON_ADMIN["write"].format(user_id=user_id))
+
+
+@commands_router.message(is_admin, Command(commands="all"))
+async def process_write_all_command(
+    message: Message,
+    session: AsyncSession,
+):
+    """Хендлер для отправки сообщения всем пользователям"""
+
+    logger.info(f"Админ {message.from_user.id} ввел команду /all")
+
+    service = UserService(session=session)
+
+    users = await service.get_users()
+
+    if not users:
+        await message.answer(text=LEXICON_ADMIN["users_not_found"])
+    else:
+        text = message.text.split("::")[1]
+
+        await message.answer(
+            text=text,
+        )
+        await message.answer(text=LEXICON_ADMIN["write_all"])
+
+
+@commands_router.message(is_admin, Command(commands="info"))
+async def process_get_user_info_command(
+    message: Message,
+    session: AsyncSession,
+):
+    """Хендлер, для получения данных о пользователе"""
+
+    logger.info(f"Админ {message.from_user.id} ввел команду /info")
+
+    servicer = UserService(session=session)
+
+    user_id = int(message.text.split(" ")[1])
+    user = await servicer.get_user(user_id=user_id)
+
+    if not user:
+        await message.answer(text=LEXICON_ADMIN["not_found"].format(user_id=user_id))
+    else:
+        await message.answer(
+            text=LEXICON_ADMIN["user_info"].format(
+                username=user.username,
+                id=user.user_id,
+                form_education=(
+                    user.form_education if user.form_education else "Не выбрано"
+                ),
+                faculty=user.faculty if user.faculty else "Не выбрано",
+                group=user.group if user.group else "Не выбрано",
+                ban="Забанен" if user.is_baned else "Не забанен",
+            )
+        )

@@ -32,6 +32,7 @@ async def main() -> None:
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher(storage=storage)
+    dp["bot"] = bot
 
     # Старт
     @dp.startup()

@@ -1,6 +1,13 @@
 from aiogram.fsm.state import State, StatesGroup
 
 
+class BotStatuses(StatesGroup):
+    """Состояния бота"""
+
+    launched = State()
+    disabled = State()
+
+
 class ScheduleStates(StatesGroup):
     """Состояния пользователя"""
 
@@ -16,9 +23,5 @@ class AdminStates(StatesGroup):
 
     admin_main_manu = State()
     update_schedule = State()
-    ban_user = State()
-    unban_all_users = State()
-    write_user = State()
-    write_all_users = State()
-    stop_bot = State()
     user_list = State()
+    user_info = State()

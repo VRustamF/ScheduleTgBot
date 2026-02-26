@@ -2,13 +2,16 @@ import logging
 
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup
 from aiogram.filters import StateFilter
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.filters import is_admin
 from bot.keyboards.inline_kb_builder import create_inline_kb
 from bot.lexicon import LEXICON_ADMIN_INLINE_KEYBOARD, LEXICON_ADMIN
 from bot.states import AdminStates
+from crud.users import UserService
 from schedule_parser import start_schedule_downloader, start_formatter, start_parser
 
 admin_panel_router = Router()
@@ -48,6 +51,65 @@ async def process_update_schedule(
 
         await callback.message.edit_text(
             text="Неизвестная ошибка", reply_markup=keyboard
+        )
+
+
+@admin_panel_router.callback_query(
+    is_admin,
+    AdminStates.admin_main_manu,
+    F.data == "stop",
+)
+async def process_stop_bot(
+    callback: CallbackQuery, state: FSMContext, session: AsyncSession
+):
+    """Хендлер для остановки бота"""
+
+    pass
+
+
+@admin_panel_router.callback_query(
+    is_admin,
+    AdminStates.admin_main_manu,
+    F.data == "start",
+)
+async def process_start_bot(
+    callback: CallbackQuery, state: FSMContext, session: AsyncSession
+):
+    """Хендлер для запуска бота"""
+
+    pass
+
+
+@admin_panel_router.callback_query(
+    is_admin,
+    AdminStates.admin_main_manu,
+    F.data == "users_list",
+)
+async def process_users_list(
+    callback: CallbackQuery, state: FSMContext, session: AsyncSession
+):
+    """Хендлер для отображения списка пользователей"""
+
+    logger.info(f"Админ {callback.from_user.id} выбрал кнопку 'Список пользователей'")
+
+    await state.set_state(AdminStates.user_list)
+
+    keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
+
+    servicer = UserService(session=session)
+
+    users = await servicer.get_users()
+
+    if not users:
+        await callback.message.edit_text(
+            text=LEXICON_ADMIN["users_not_found"],
+            reply_markup=keyboard,
+        )
+    else:
+        text = " ".join(str(user) for user in users)
+        await callback.message.edit_text(
+            text=text,
+            reply_markup=keyboard,
         )
 
 
