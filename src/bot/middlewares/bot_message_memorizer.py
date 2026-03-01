@@ -28,6 +28,10 @@ class SingleMessageMiddleware(BaseRequestMiddleware):
 
     async def __call__(self, make_request, bot, method):
 
+        # Не удаляем сообщения другим пользователям
+        if getattr(method, "skip_single_middleware", False):
+            return await make_request(bot, method)
+
         # Только если создаётся новое сообщение
         if isinstance(method, SendMessage):
 

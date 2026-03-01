@@ -196,6 +196,7 @@ async def process_write_user_command(
         text = message.text.split("::")[1]
 
         await send_message_to_user(bot=bot, user_id=user_id, text=text)
+        logger.info(f"Информационное сообщение отправлено пользователю {user_id}")
         await message.answer(text=LEXICON_ADMIN["write"].format(user_id=user_id))
 
 
@@ -203,6 +204,7 @@ async def process_write_user_command(
 async def process_write_all_command(
     message: Message,
     session: AsyncSession,
+    bot: Bot,
 ):
     """Хендлер для отправки сообщения всем пользователям"""
 
@@ -217,9 +219,15 @@ async def process_write_all_command(
     else:
         text = message.text.split("::")[1]
 
-        await message.answer(
-            text=text,
-        )
+        for user in users:
+
+            if user.user_id != message.from_user.id:
+                user_id = user.user_id
+                await send_message_to_user(bot=bot, user_id=user_id, text=text)
+                logger.info(
+                    f"Информационное сообщение отправлено пользователю {user_id}"
+                )
+
         await message.answer(text=LEXICON_ADMIN["write_all"])
 
 
