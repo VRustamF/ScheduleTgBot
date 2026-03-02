@@ -6,8 +6,9 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 
-from bot.middlewares.db import DatabaseMiddleware
-from bot.middlewares.bot_message_memorizer import (
+from bot.middlewares import (
+    DatabaseMiddleware,
+    BanMiddleware,
     UserMessageDeleterMiddleware,
     SingleMessageMiddleware,
 )
@@ -54,6 +55,7 @@ async def main() -> None:
     dp.include_router(commands_router)
     dp.include_router(admin_panel_router)
     dp.include_router(schedule_router)
+    dp.update.middleware(BanMiddleware())
     dp.update.middleware(DatabaseMiddleware())
     dp.message.middleware(UserMessageDeleterMiddleware())
     bot.session.middleware(SingleMessageMiddleware(dp.storage))
