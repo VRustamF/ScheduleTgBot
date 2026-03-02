@@ -3,7 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from crud.schedules import ScheduleService
 from bot.keyboards.inline_kb_builder import create_inline_kb
-from bot.lexicon import LEXICON_INLINE_KEYBOARDS_TYPES, LEXICON_DAYS_RU, LEXICON_PARITY
+from bot.lexicon import (
+    LEXICON_INLINE_KEYBOARDS_TYPES,
+    LEXICON_DAYS_RU,
+    LEXICON_ADMIN_INLINE_KEYBOARD,
+)
 
 
 async def create_forms_education_kb(session: AsyncSession) -> InlineKeyboardMarkup:
@@ -25,7 +29,7 @@ async def create_forms_education_kb(session: AsyncSession) -> InlineKeyboardMark
 async def create_faculties_kb(
     form_education: str, session: AsyncSession
 ) -> InlineKeyboardMarkup:
-    """Функция формирования клавиатуры с факультетами."""
+    """Функция формирования клавиатуры с факультетами"""
 
     service = ScheduleService(session=session)
     faculties = await service.get_faculties(form_education=form_education)
@@ -43,7 +47,7 @@ async def create_faculties_kb(
 async def create_groups_kb(
     form_education: str, faculty: str, session: AsyncSession
 ) -> InlineKeyboardMarkup:
-    """Функция формирования клавиатуры с группами."""
+    """Функция формирования клавиатуры с группами"""
 
     service = ScheduleService(session=session)
     groups = await service.get_groups(form_education=form_education, faculty=faculty)
@@ -61,7 +65,7 @@ async def create_groups_kb(
 async def create_pagination_kb(
     current_day: int, parity_count: int
 ) -> InlineKeyboardMarkup:
-    """Функция формирования клавиатуры для пагинации."""
+    """Функция формирования клавиатуры для пагинации"""
 
     buttons = {}
     if current_day > 1:
@@ -91,7 +95,7 @@ async def create_pagination_kb(
 
 
 async def create_weekly_kb(parity_count: int) -> InlineKeyboardMarkup:
-    """Функция формирования клавиатуры для недельного расписания."""
+    """Функция формирования клавиатуры для недельного расписания"""
 
     buttons = {}
 
@@ -103,6 +107,26 @@ async def create_weekly_kb(parity_count: int) -> InlineKeyboardMarkup:
         1,
         None,
         False,
+        **buttons,
+    )
+
+    return keyboard
+
+
+async def create_admin_kb(bot_enabled: bool) -> InlineKeyboardMarkup:
+    """Функция для формирования клавиатуры админа"""
+
+    buttons = LEXICON_ADMIN_INLINE_KEYBOARD.copy()
+
+    if bot_enabled:
+        del buttons["start_bot"]
+    else:
+        del buttons["stop_bot"]
+
+    keyboard = create_inline_kb(
+        1,
+        None,
+        True,
         **buttons,
     )
 

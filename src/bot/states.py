@@ -25,3 +25,5 @@ class AdminStates(StatesGroup):
     update_schedule = State()
     user_list = State()
     user_info = State()
+    enable_bot = State()
+    disable_bot = State()

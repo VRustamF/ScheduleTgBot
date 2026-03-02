@@ -1,14 +1,11 @@
-import logging
 from typing import Any, Dict, Callable, Awaitable
 
 from aiogram import BaseMiddleware
 from aiogram.dispatcher.event.bases import CancelHandler
-from aiogram.types import TelegramObject, Message, CallbackQuery
+from aiogram.types import TelegramObject
 
 from core import db_helper
 from crud.users import UserService
-
-logger = logging.getLogger(__name__)
 
 
 class BanMiddleware(BaseMiddleware):
@@ -21,7 +18,7 @@ class BanMiddleware(BaseMiddleware):
         data: Dict[str, Any],
     ) -> Any:
 
-        telegram_user = data.get("event_from_user", None)
+        telegram_user = data.get("event_from_user")
 
         if not telegram_user:
             return await handler(event, data)
@@ -31,8 +28,8 @@ class BanMiddleware(BaseMiddleware):
             user = await service.get_user(telegram_user.id)
 
         if user and user.is_baned:
-
             # Останавливаем дальнейшую обработку
+
             raise CancelHandler()
 
         # Иначе продолжаем обработку

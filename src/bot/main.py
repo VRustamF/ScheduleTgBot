@@ -11,10 +11,12 @@ from bot.middlewares import (
     BanMiddleware,
     UserMessageDeleterMiddleware,
     SingleMessageMiddleware,
+    BotEnabledMiddleware,
 )
 from bot.keyboards.main_keyboard import set_main_menu, set_admin_main_menu
 from bot.handlers import commands_router, schedule_router, admin_panel_router
 from core import settings, db_helper, broker
+from crud.bot_swicher import BotStateService
 
 logging.basicConfig(
     level=logging.getLevelName(settings.log.level),
@@ -55,6 +57,11 @@ async def main() -> None:
     dp.include_router(commands_router)
     dp.include_router(admin_panel_router)
     dp.include_router(schedule_router)
+
+    bot_state_service = BotStateService(storage.redis)
+    dp["bot_state_service"] = bot_state_service
+
+    dp.update.middleware(BotEnabledMiddleware(bot_state_service))
     dp.update.middleware(BanMiddleware())
     dp.update.middleware(DatabaseMiddleware())
     dp.message.middleware(UserMessageDeleterMiddleware())

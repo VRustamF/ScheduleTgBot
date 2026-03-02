@@ -7,17 +7,18 @@ from aiogram.fsm.context import FSMContext
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from crud.bot_swicher import BotStateService
 from crud.users import UserService
 from bot.lexicon import (
     LEXICON,
     LEXICON_INLINE_KEYBOARDS_TYPES,
     LEXICON_ADMIN,
-    LEXICON_ADMIN_INLINE_KEYBOARD,
 )
 from bot.utils.keyboard_makers import (
     create_forms_education_kb,
     create_faculties_kb,
     create_groups_kb,
+    create_admin_kb,
 )
 from bot.states import ScheduleStates, AdminStates
 from bot.utils.sender_messages import send_message_to_user
@@ -113,17 +114,15 @@ async def process_change_command(
 async def process_admin_panel_command(
     message: Message,
     state: FSMContext,
+    bot_state_service: BotStateService,
 ):
     """Хендлер для команды /panel. Отправляет пользователю админ панель."""
 
     logger.info(f"Админ {message.from_user.id} ввел команду /panel")
 
-    keyboard: InlineKeyboardMarkup = create_inline_kb(
-        1,
-        None,
-        True,
-        **LEXICON_ADMIN_INLINE_KEYBOARD,
-    )
+    bot_enabled = await bot_state_service.is_enabled()
+
+    keyboard: InlineKeyboardMarkup = await create_admin_kb(bot_enabled=bot_enabled)
 
     await state.set_state(AdminStates.admin_main_manu)
 

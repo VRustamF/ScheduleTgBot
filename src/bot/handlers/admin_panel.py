@@ -9,8 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.filters import is_admin
 from bot.keyboards.inline_kb_builder import create_inline_kb
-from bot.lexicon import LEXICON_ADMIN_INLINE_KEYBOARD, LEXICON_ADMIN
+from bot.lexicon import LEXICON_ADMIN
+from bot.utils.keyboard_makers import create_admin_kb
 from bot.states import AdminStates
+from crud.bot_swicher import BotStateService
 from crud.users import UserService
 from schedule_parser import start_schedule_downloader, start_formatter, start_parser
 
@@ -57,27 +59,47 @@ async def process_update_schedule(
 @admin_panel_router.callback_query(
     is_admin,
     AdminStates.admin_main_manu,
-    F.data == "stop",
+    F.data == "start_bot",
 )
-async def process_stop_bot(
-    callback: CallbackQuery, state: FSMContext, session: AsyncSession
+async def process_start_bot(
+    callback: CallbackQuery,
+    state: FSMContext,
+    bot_state_service: BotStateService,
 ):
-    """Хендлер для остановки бота"""
+    """Хендлер для запуска бота"""
 
-    pass
+    logger.info(f"Админ {callback.from_user.id} включил бота")
+
+    await state.set_state(AdminStates.enable_bot)
+
+    keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
+
+    await bot_state_service.enable()
+    await callback.message.edit_text(text="Бот включён!", reply_markup=keyboard)
 
 
 @admin_panel_router.callback_query(
     is_admin,
     AdminStates.admin_main_manu,
-    F.data == "start",
+    F.data == "stop_bot",
 )
-async def process_start_bot(
-    callback: CallbackQuery, state: FSMContext, session: AsyncSession
+async def process_stop_bot(
+    callback: CallbackQuery,
+    state: FSMContext,
+    bot_state_service: BotStateService,
 ):
-    """Хендлер для запуска бота"""
+    """Хендлер для остановки бота"""
 
-    pass
+    logger.info(f"Админ {callback.from_user.id} перевёл бота в сервисный режим")
+
+    await state.set_state(AdminStates.disable_bot)
+
+    keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
+
+    await bot_state_service.disable()
+    await callback.message.edit_text(
+        text="Бот переведен в режим обслуживания!", reply_markup=keyboard
+    )
 
 
 @admin_panel_router.callback_query(
@@ -116,17 +138,18 @@ async def process_users_list(
 @admin_panel_router.callback_query(
     is_admin, StateFilter(AdminStates), F.data.startswith("back")
 )
-async def process_back_button(callback: CallbackQuery, state: FSMContext):
+async def process_back_button(
+    callback: CallbackQuery,
+    state: FSMContext,
+    bot_state_service: BotStateService,
+):
     """Хендлер для кнопки "Назад"."""
 
     logger.info(f"Админ {callback.from_user.id} выбрал кнопку 'Назад'")
 
-    keyboard: InlineKeyboardMarkup = create_inline_kb(
-        1,
-        None,
-        True,
-        **LEXICON_ADMIN_INLINE_KEYBOARD,
-    )
+    bot_enabled = await bot_state_service.is_enabled()
+
+    keyboard: InlineKeyboardMarkup = await create_admin_kb(bot_enabled=bot_enabled)
 
     await state.set_state(AdminStates.admin_main_manu)
 
