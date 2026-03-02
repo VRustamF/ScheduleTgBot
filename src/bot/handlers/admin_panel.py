@@ -24,6 +24,41 @@ logger = logging.getLogger(__name__)
 @admin_panel_router.callback_query(
     is_admin,
     AdminStates.admin_main_manu,
+    F.data == "bot_info",
+)
+async def process_get_bot_info(
+    callback: CallbackQuery,
+    state: FSMContext,
+    session: AsyncSession,
+    bot_state_service: BotStateService,
+):
+    """Хендлер для выдачи технической информации о боте"""
+
+    logger.info(f"Админ {callback.from_user.id} получил справку о боте")
+
+    await state.set_state(AdminStates.bot_info)
+
+    keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
+
+    service = UserService(session)
+
+    bot_state = await bot_state_service.is_enabled()
+    users_count = await service.get_users_count()
+    banned_count = await service.get_users_count(is_banned=True)
+
+    msg = LEXICON_ADMIN["bot_info"].format(
+        bot_state=bot_state,
+        update_schedule_time="Неизвестно",  # update_time if update_time else
+        users_count=users_count,
+        banned_count=banned_count,
+    )
+
+    await callback.message.edit_text(text=msg, reply_markup=keyboard)
+
+
+@admin_panel_router.callback_query(
+    is_admin,
+    AdminStates.admin_main_manu,
     F.data == "update",
 )
 async def process_update_schedule(
@@ -36,7 +71,7 @@ async def process_update_schedule(
 
     keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
 
-    await callback.message.edit_text(text="Начинаю обновление расписания")
+    await callback.message.edit_text(text=LEXICON_ADMIN["start_update_schedule"])
 
     try:
         logger.info("Начинаем обновление расписания")
@@ -46,13 +81,13 @@ async def process_update_schedule(
         logger.info("Расписание успешно обновлено")
 
         await callback.message.edit_text(
-            text="Расписание обновлено успешно!", reply_markup=keyboard
+            text=LEXICON_ADMIN["update_successful"], reply_markup=keyboard
         )
     except Exception as e:
         logger.exception(f"Ошибка при обновлении расписания: {e}")
 
         await callback.message.edit_text(
-            text="Неизвестная ошибка", reply_markup=keyboard
+            text=LEXICON_ADMIN["update_error"], reply_markup=keyboard
         )
 
 
@@ -75,7 +110,9 @@ async def process_start_bot(
     keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
 
     await bot_state_service.enable()
-    await callback.message.edit_text(text="Бот включён!", reply_markup=keyboard)
+    await callback.message.edit_text(
+        text=LEXICON_ADMIN["bot_enabled"], reply_markup=keyboard
+    )
 
 
 @admin_panel_router.callback_query(
@@ -98,7 +135,7 @@ async def process_stop_bot(
 
     await bot_state_service.disable()
     await callback.message.edit_text(
-        text="Бот переведен в режим обслуживания!", reply_markup=keyboard
+        text=LEXICON_ADMIN["bot_disabled"], reply_markup=keyboard
     )
 
 

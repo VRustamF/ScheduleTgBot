@@ -27,3 +27,4 @@ class AdminStates(StatesGroup):
     user_info = State()
     enable_bot = State()
     disable_bot = State()
+    bot_info = State()

@@ -144,11 +144,18 @@ async def process_ban_user_command(
 
     user = await service.get_user(user_id=user_id)
 
+    keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
+
     if not user:
-        await message.answer(text=LEXICON_ADMIN["not_banned"].format(user_id=user_id))
+        await message.answer(
+            text=LEXICON_ADMIN["not_banned"].format(user_id=user_id),
+            reply_markup=keyboard,
+        )
     else:
         await service.ban_user(user_id=user_id)
-        await message.answer(text=LEXICON_ADMIN["banned"].format(user_id=user_id))
+        await message.answer(
+            text=LEXICON_ADMIN["banned"].format(user_id=user_id), reply_markup=keyboard
+        )
 
 
 @commands_router.message(is_admin, Command(commands="unban"))
@@ -166,11 +173,19 @@ async def process_unban_user_command(
 
     user = await service.get_user(user_id=user_id)
 
+    keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
+
     if not user:
-        await message.answer(text=LEXICON_ADMIN["not_found"].format(user_id=user_id))
+        await message.answer(
+            text=LEXICON_ADMIN["not_found"].format(user_id=user_id),
+            reply_markup=keyboard,
+        )
     else:
         await service.unban_user(user_id=user_id)
-        await message.answer(text=LEXICON_ADMIN["unbanned"].format(user_id=user_id))
+        await message.answer(
+            text=LEXICON_ADMIN["unbanned"].format(user_id=user_id),
+            reply_markup=keyboard,
+        )
 
 
 @commands_router.message(is_admin, Command(commands="write"))
@@ -189,14 +204,21 @@ async def process_write_user_command(
 
     user = await service.get_user(user_id=user_id)
 
+    keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
+
     if not user:
-        await message.answer(text=LEXICON_ADMIN["not_found"].format(user_id=user_id))
+        await message.answer(
+            text=LEXICON_ADMIN["not_found"].format(user_id=user_id),
+            reply_markup=keyboard,
+        )
     else:
         text = message.text.split("::")[1]
 
         await send_message_to_user(bot=bot, user_id=user_id, text=text)
         logger.info(f"Информационное сообщение отправлено пользователю {user_id}")
-        await message.answer(text=LEXICON_ADMIN["write"].format(user_id=user_id))
+        await message.answer(
+            text=LEXICON_ADMIN["write"].format(user_id=user_id), reply_markup=keyboard
+        )
 
 
 @commands_router.message(is_admin, Command(commands="all"))
@@ -213,8 +235,12 @@ async def process_write_all_command(
 
     users = await service.get_users()
 
+    keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
+
     if not users:
-        await message.answer(text=LEXICON_ADMIN["users_not_found"])
+        await message.answer(
+            text=LEXICON_ADMIN["users_not_found"], reply_markup=keyboard
+        )
     else:
         text = message.text.split("::")[1]
 
@@ -227,7 +253,7 @@ async def process_write_all_command(
                     f"Информационное сообщение отправлено пользователю {user_id}"
                 )
 
-        await message.answer(text=LEXICON_ADMIN["write_all"])
+        await message.answer(text=LEXICON_ADMIN["write_all"], reply_markup=keyboard)
 
 
 @commands_router.message(is_admin, Command(commands="info"))
@@ -244,8 +270,13 @@ async def process_get_user_info_command(
     user_id = int(message.text.split(" ")[1])
     user = await servicer.get_user(user_id=user_id)
 
+    keyboard: InlineKeyboardMarkup = create_inline_kb(1, None, False)
+
     if not user:
-        await message.answer(text=LEXICON_ADMIN["not_found"].format(user_id=user_id))
+        await message.answer(
+            text=LEXICON_ADMIN["not_found"].format(user_id=user_id),
+            reply_markup=keyboard,
+        )
     else:
         await message.answer(
             text=LEXICON_ADMIN["user_info"].format(
@@ -257,5 +288,6 @@ async def process_get_user_info_command(
                 faculty=user.faculty if user.faculty else "Не выбрано",
                 group=user.group if user.group else "Не выбрано",
                 ban="Забанен" if user.is_baned else "Не забанен",
-            )
+            ),
+            reply_markup=keyboard,
         )

@@ -30,12 +30,12 @@ class User(Base):
 
     def __repr__(self):
         return (
-            f"Пользователь {self.username}:\n"
-            f"id: {self.user_id}\n"
-            f"Форма обучения: {self.form_education if self.form_education else "Не выбрано"}\n"
-            f"Факультет: {self.faculty if self.faculty else "Не выбрано"}\n"
-            f"Группа: {self.group if self.group else "Не выбрано"}\n"
-            f"Статус: {"Забанен" if self.is_baned else "Не забанен"}\n\n"
+            f"👤 Пользователь: {self.username}\n"
+            f"🆔 ID: {self.user_id}\n"
+            f"🎓 Форма обучения: {self.form_education if self.form_education else 'Не выбрано'}\n"
+            f"🏛 Факультет: {self.faculty if self.faculty else 'Не выбрано'}\n"
+            f"👥 Группа: {self.group if self.group else 'Не выбрано'}\n"
+            f"⚠️ Статус: {'Забанен' if self.is_baned else 'Не забанен'}\n\n"
         )
 
 

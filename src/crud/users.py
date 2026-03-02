@@ -1,4 +1,4 @@
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import User
@@ -10,6 +10,18 @@ class UserService:
     def __init__(self, session: AsyncSession):
         """Получаем сессию"""
         self.session = session
+
+    async def get_users_count(self, is_banned: bool = False):
+        """Функция, для получения количества пользователей"""
+
+        stmt = select(func.count()).select_from(User)
+
+        if is_banned:
+            stmt = stmt.where(User.is_baned == True)
+
+        result = await self.session.execute(stmt)
+
+        return result.scalar_one()
 
     async def get_users(self) -> list[User]:
         """Функция для получения пользователей"""
