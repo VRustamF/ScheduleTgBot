@@ -47,7 +47,7 @@ async def process_get_bot_info(
     banned_count = await service.get_users_count(is_banned=True)
 
     msg = LEXICON_ADMIN["bot_info"].format(
-        bot_state=bot_state,
+        bot_state="Активен" if bot_state else "В режиме обслуживания",
         update_schedule_time="Неизвестно",  # update_time if update_time else
         users_count=users_count,
         banned_count=banned_count,
@@ -180,7 +180,7 @@ async def process_back_button(
     state: FSMContext,
     bot_state_service: BotStateService,
 ):
-    """Хендлер для кнопки "Назад"."""
+    """Хендлер для кнопки 'Назад'"""
 
     logger.info(f"Админ {callback.from_user.id} выбрал кнопку 'Назад'")
 

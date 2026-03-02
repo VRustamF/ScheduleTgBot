@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 async def process_form_education_selection(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для обработки выбора формы обучения. Отправляет пользователю список факультетов для выбора."""
+    """Хендлер для обработки выбора формы обучения. Отправляет пользователю список факультетов для выбора"""
 
     form_education_name = callback.data.split(":")[1]
     logger.info(
@@ -75,7 +75,7 @@ async def process_form_education_selection(
 async def process_faculty_selection(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для обработки выбора факультета. Отправляет пользователю список групп для выбора."""
+    """Хендлер для обработки выбора факультета. Отправляет пользователю список групп для выбора"""
 
     faculty_name = callback.data.split(":")[1]
     logger.info(
@@ -114,7 +114,7 @@ async def process_faculty_selection(
 async def process_group_selection(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для обработки выбора Группы. Отправляет расписание."""
+    """Хендлер для обработки выбора Группы. Отправляет расписание"""
 
     group_name = callback.data.split(":")[1]
     logger.info(f"Пользователь {callback.from_user.id} выбрал группу: {group_name}")
@@ -161,7 +161,7 @@ async def process_group_selection(
 async def process_weekly_schedule(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для обработки запроса на недельное расписание. Отправляет расписание на неделю."""
+    """Хендлер для обработки запроса на недельное расписание. Отправляет расписание на неделю"""
 
     logger.info(f"Пользователь {callback.from_user.id} запросил недельное расписание")
 
@@ -199,7 +199,7 @@ async def process_weekly_schedule(
     F.data.startswith("prev:") | F.data.startswith("next:"),
 )
 async def process_pagination(callback: CallbackQuery, session: AsyncSession):
-    """Хендлер для обработки пагинации. Отправляет расписание на другой день."""
+    """Хендлер для обработки пагинации. Отправляет расписание на другой день"""
 
     selected_day = int(callback.data.split(":")[1])
     selected_parity = int(callback.data.split(":")[2])
@@ -248,7 +248,7 @@ async def process_pagination(callback: CallbackQuery, session: AsyncSession):
     F.data.startswith("current:"),
 )
 async def process_change_day_parity(callback: CallbackQuery, session: AsyncSession):
-    """Хендлер отправки расписания для того же дня следующей по четности недели."""
+    """Хендлер отправки расписания для того же дня следующей по четности недели"""
 
     selected_day = int(callback.data.split(":")[1])
     selected_parity = int(callback.data.split(":")[2])
@@ -299,7 +299,7 @@ async def process_change_day_parity(callback: CallbackQuery, session: AsyncSessi
     F.data.startswith("current_week:"),
 )
 async def process_change_day_parity(callback: CallbackQuery, session: AsyncSession):
-    """Хендлер отправки расписания для следующей по четности недели."""
+    """Хендлер отправки расписания для следующей по четности недели"""
 
     selected_parity = int(callback.data.split(":")[1])
     logger.info(
@@ -343,7 +343,7 @@ async def process_change_day_parity(callback: CallbackQuery, session: AsyncSessi
 async def process_back_button(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для кнопки "Назад"."""
+    """Хендлер для кнопки 'Назад'"""
 
     logger.info(f"Пользователь {callback.from_user.id} выбрал кнопку 'Назад'")
 

@@ -17,7 +17,7 @@ async def set_main_menu(bot: Bot):
 
 
 async def set_admin_main_menu(bot: Bot, admin_id: int):
-    """Формирование меню для админов"""
+    """Формирование меню для админа"""
 
     admin_menu_commands = [
         BotCommand(command=command, description=description)

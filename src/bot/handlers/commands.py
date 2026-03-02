@@ -36,7 +36,7 @@ async def process_start_command(
     state: FSMContext,
     session: AsyncSession,
 ):
-    """Хендлер для команды /start. Отправляет пользователю приветственное сообщение и отображает нужное меню."""
+    """Хендлер для команды /start. Отправляет пользователю приветственное сообщение и отображает нужное меню"""
 
     logger.info(f"Пользователь {message.from_user.id} ввёл команду /start")
 
@@ -92,7 +92,7 @@ async def process_change_command(
     state: FSMContext,
     session: AsyncSession,
 ):
-    """Хендлер для команды /change. Отправляет пользователю меню с факультетами."""
+    """Хендлер для команды /change. Отправляет пользователю меню с факультетами"""
 
     logger.info(f"Пользователь {message.from_user.id} ввёл команду /change")
 
@@ -116,7 +116,7 @@ async def process_admin_panel_command(
     state: FSMContext,
     bot_state_service: BotStateService,
 ):
-    """Хендлер для команды /panel. Отправляет пользователю админ панель."""
+    """Хендлер для команды /panel. Отправляет пользователю админ панель"""
 
     logger.info(f"Админ {message.from_user.id} ввел команду /panel")
 
