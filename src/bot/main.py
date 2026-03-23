@@ -6,14 +6,17 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 
-from bot.middlewares.db import DatabaseMiddleware
-from bot.middlewares.bot_message_memorizer import (
+from bot.middlewares import (
+    DatabaseMiddleware,
+    BanMiddleware,
     UserMessageDeleterMiddleware,
     SingleMessageMiddleware,
+    BotEnabledMiddleware,
 )
-from bot.keyboards.main_keyboard import set_main_menu
-from bot.handlers import commands_router, schedule_router
+from bot.keyboards.main_keyboard import set_main_menu, set_admin_main_menu
+from bot.handlers import commands_router, schedule_router, admin_panel_router
 from core import settings, db_helper, broker
+from crud.bot_swicher import BotStateService
 
 logging.basicConfig(
     level=logging.getLevelName(settings.log.level),
@@ -23,6 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
+    """Функция для запуска бота"""
+
     storage = RedisStorage.from_url(str(settings.redis.url))
 
     bot = Bot(
@@ -30,12 +35,16 @@ async def main() -> None:
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher(storage=storage)
+    dp["bot"] = bot
 
     # Старт
     @dp.startup()
     async def on_startup():
         await broker.startup()
         await set_main_menu(bot=bot)
+
+        for admin_id in settings.admins_panel.admins:
+            await set_admin_main_menu(bot=bot, admin_id=admin_id)
         logger.info("Bot started")
 
     # Остановка — закрываем только то, что aiogram не закрывает сам
@@ -46,7 +55,14 @@ async def main() -> None:
         logger.info("Bot stopped")
 
     dp.include_router(commands_router)
+    dp.include_router(admin_panel_router)
     dp.include_router(schedule_router)
+
+    bot_state_service = BotStateService(storage.redis)
+    dp["bot_state_service"] = bot_state_service
+
+    dp.update.middleware(BotEnabledMiddleware(bot_state_service))
+    dp.update.middleware(BanMiddleware())
     dp.update.middleware(DatabaseMiddleware())
     dp.message.middleware(UserMessageDeleterMiddleware())
     bot.session.middleware(SingleMessageMiddleware(dp.storage))

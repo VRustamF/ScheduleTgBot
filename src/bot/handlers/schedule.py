@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 async def process_form_education_selection(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для обработки выбора формы обучения. Отправляет пользователю список факультетов для выбора."""
+    """Хендлер для обработки выбора формы обучения. Отправляет пользователю список факультетов для выбора"""
 
     form_education_name = callback.data.split(":")[1]
     logger.info(
@@ -75,7 +75,7 @@ async def process_form_education_selection(
 async def process_faculty_selection(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для обработки выбора факультета. Отправляет пользователю список групп для выбора."""
+    """Хендлер для обработки выбора факультета. Отправляет пользователю список групп для выбора"""
 
     faculty_name = callback.data.split(":")[1]
     logger.info(
@@ -114,7 +114,7 @@ async def process_faculty_selection(
 async def process_group_selection(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для обработки выбора Группы. Отправляет расписание."""
+    """Хендлер для обработки выбора Группы. Отправляет расписание"""
 
     group_name = callback.data.split(":")[1]
     logger.info(f"Пользователь {callback.from_user.id} выбрал группу: {group_name}")
@@ -134,31 +134,34 @@ async def process_group_selection(
         session=session,
     )
 
-    message = LEXICON["schedule_message"]
+    msg = LEXICON["schedule_message"].format(
+        group_name=group_name,
+        week="Текущая неделя",
+        current_week=LEXICON_PARITY[parity_count],
+        day=LEXICON_DAYS_RU[today_count],
+        final_schedule=schedule if schedule else LEXICON["nothing"],
+        current_day=LEXICON_DAYS_RU[today_count],
+    )
     keyboard: InlineKeyboardMarkup = await create_pagination_kb(
         current_day=today_count,
         parity_count=parity_count,
     )
 
     await callback.message.edit_text(
-        text=message.format(
-            group_name=group_name,
-            week="Текущая неделя",
-            current_week=LEXICON_PARITY[parity_count],
-            day=LEXICON_DAYS_RU[today_count],
-            final_schedule=schedule if schedule else LEXICON["nothing"],
-            current_day=LEXICON_DAYS_RU[today_count],
-        ),
+        text=msg,
         reply_markup=keyboard,
     )
     await callback.answer()
 
 
-@schedule_router.callback_query(F.data.startswith("weekly:"))
+@schedule_router.callback_query(
+    ScheduleStates.read_schedule,
+    F.data.startswith("weekly:"),
+)
 async def process_weekly_schedule(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для обработки запроса на недельное расписание. Отправляет расписание на неделю."""
+    """Хендлер для обработки запроса на недельное расписание. Отправляет расписание на неделю"""
 
     logger.info(f"Пользователь {callback.from_user.id} запросил недельное расписание")
 
@@ -173,27 +176,30 @@ async def process_weekly_schedule(
         session=session,
     )
 
-    message = LEXICON["weekly_schedule_message"]
+    msg = LEXICON["weekly_schedule_message"].format(
+        group_name=user.group,
+        week="Текущая неделя",
+        current_week=LEXICON_PARITY[parity_count],
+        weekly_schedule=schedule if schedule else LEXICON["nothing"],
+    )
 
     keyboard: InlineKeyboardMarkup = await create_weekly_kb(parity_count=parity_count)
 
     await state.set_state(ScheduleStates.read_weekly_schedule)
 
     await callback.message.edit_text(
-        text=message.format(
-            group_name=user.group,
-            week="Текущая неделя",
-            current_week=LEXICON_PARITY[parity_count],
-            weekly_schedule=schedule if schedule else LEXICON["nothing"],
-        ),
+        text=msg,
         reply_markup=keyboard,
     )
     await callback.answer()
 
 
-@schedule_router.callback_query(F.data.startswith("prev:") | F.data.startswith("next:"))
+@schedule_router.callback_query(
+    ScheduleStates.read_schedule,
+    F.data.startswith("prev:") | F.data.startswith("next:"),
+)
 async def process_pagination(callback: CallbackQuery, session: AsyncSession):
-    """Хендлер для обработки пагинации. Отправляет расписание на другой день."""
+    """Хендлер для обработки пагинации. Отправляет расписание на другой день"""
 
     selected_day = int(callback.data.split(":")[1])
     selected_parity = int(callback.data.split(":")[2])
@@ -214,32 +220,35 @@ async def process_pagination(callback: CallbackQuery, session: AsyncSession):
         parity_count=selected_parity,
     )
 
-    message = LEXICON["schedule_message"]
+    week = "Следующая неделя" if parity_count != week_parity() else "Текущая неделя"
+
+    msg = LEXICON["schedule_message"].format(
+        group_name=user.group,
+        week=week,
+        current_week=LEXICON_PARITY[parity_count],
+        day=LEXICON_DAYS_RU[selected_day],
+        final_schedule=schedule if schedule else LEXICON["nothing"],
+        current_day=LEXICON_DAYS_RU[selected_day],
+    )
 
     keyboard: InlineKeyboardMarkup = await create_pagination_kb(
         current_day=selected_day,
         parity_count=parity_count,
     )
 
-    week = "Следующая неделя" if parity_count != week_parity() else "Текущая неделя"
-
     await callback.message.edit_text(
-        text=message.format(
-            group_name=user.group,
-            week=week,
-            current_week=LEXICON_PARITY[parity_count],
-            day=LEXICON_DAYS_RU[selected_day],
-            final_schedule=schedule if schedule else LEXICON["nothing"],
-            current_day=LEXICON_DAYS_RU[selected_day],
-        ),
+        text=msg,
         reply_markup=keyboard,
     )
     await callback.answer()
 
 
-@schedule_router.callback_query(F.data.startswith("current:"))
+@schedule_router.callback_query(
+    ScheduleStates.read_schedule,
+    F.data.startswith("current:"),
+)
 async def process_change_day_parity(callback: CallbackQuery, session: AsyncSession):
-    """Хендлер отправки расписания для того же дня следующей по четности недели."""
+    """Хендлер отправки расписания для того же дня следующей по четности недели"""
 
     selected_day = int(callback.data.split(":")[1])
     selected_parity = int(callback.data.split(":")[2])
@@ -263,31 +272,34 @@ async def process_change_day_parity(callback: CallbackQuery, session: AsyncSessi
         parity_count=parity_count,
     )
 
-    message = LEXICON["schedule_message"]
+    week = "Следующая неделя" if parity_count != week_parity() else "Текущая неделя"
+
+    msg = LEXICON["schedule_message"].format(
+        group_name=user.group,
+        week=week,
+        current_week=LEXICON_PARITY[parity_count],
+        day=LEXICON_DAYS_RU[selected_day],
+        final_schedule=schedule if schedule else LEXICON["nothing"],
+        current_day=LEXICON_DAYS_RU[selected_day],
+    )
 
     keyboard: InlineKeyboardMarkup = await create_pagination_kb(
         current_day=selected_day, parity_count=parity_count
     )
 
-    week = "Следующая неделя" if parity_count != week_parity() else "Текущая неделя"
-
     await callback.message.edit_text(
-        text=message.format(
-            group_name=user.group,
-            week=week,
-            current_week=LEXICON_PARITY[parity_count],
-            day=LEXICON_DAYS_RU[selected_day],
-            final_schedule=schedule if schedule else LEXICON["nothing"],
-            current_day=LEXICON_DAYS_RU[selected_day],
-        ),
+        text=msg,
         reply_markup=keyboard,
     )
     await callback.answer()
 
 
-@schedule_router.callback_query(F.data.startswith("current_week:"))
+@schedule_router.callback_query(
+    ScheduleStates.read_weekly_schedule,
+    F.data.startswith("current_week:"),
+)
 async def process_change_day_parity(callback: CallbackQuery, session: AsyncSession):
-    """Хендлер отправки расписания для следующей по четности недели."""
+    """Хендлер отправки расписания для следующей по четности недели"""
 
     selected_parity = int(callback.data.split(":")[1])
     logger.info(
@@ -309,19 +321,19 @@ async def process_change_day_parity(callback: CallbackQuery, session: AsyncSessi
         parity_count=parity_count,
     )
 
-    message = LEXICON["weekly_schedule_message"]
+    week = "Следующая неделя" if parity_count != week_parity() else "Текущая неделя"
+
+    msg = LEXICON["weekly_schedule_message"].format(
+        group_name=user.group,
+        week=week,
+        current_week=LEXICON_PARITY[parity_count],
+        weekly_schedule=schedule if schedule else LEXICON["nothing"],
+    )
 
     keyboard: InlineKeyboardMarkup = await create_weekly_kb(parity_count=parity_count)
 
-    week = "Следующая неделя" if parity_count != week_parity() else "Текущая неделя"
-
     await callback.message.edit_text(
-        text=message.format(
-            group_name=user.group,
-            week=week,
-            current_week=LEXICON_PARITY[parity_count],
-            weekly_schedule=schedule if schedule else LEXICON["nothing"],
-        ),
+        text=msg,
         reply_markup=keyboard,
     )
     await callback.answer()
@@ -331,7 +343,7 @@ async def process_change_day_parity(callback: CallbackQuery, session: AsyncSessi
 async def process_back_button(
     callback: CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    """Хендлер для кнопки "Назад". Возвращает пользователя к выбору дня недели."""
+    """Хендлер для кнопки 'Назад'"""
 
     logger.info(f"Пользователь {callback.from_user.id} выбрал кнопку 'Назад'")
 
@@ -351,21 +363,22 @@ async def process_back_button(
             session=session,
         )
 
-        message = LEXICON["schedule_message"]
+        msg = LEXICON["schedule_message"].format(
+            group_name=group,
+            week="Текущая неделя",
+            current_week=LEXICON_PARITY[parity_count],
+            day=LEXICON_DAYS_RU[today_count],
+            final_schedule=schedule if schedule else LEXICON["nothing"],
+            current_day=LEXICON_DAYS_RU[today_count],
+        )
+
         keyboard: InlineKeyboardMarkup = await create_pagination_kb(
             current_day=today_count,
             parity_count=parity_count,
         )
 
         await callback.message.edit_text(
-            text=message.format(
-                group_name=group,
-                week="Текущая неделя",
-                current_week=LEXICON_PARITY[parity_count],
-                day=LEXICON_DAYS_RU[today_count],
-                final_schedule=schedule if schedule else LEXICON["nothing"],
-                current_day=LEXICON_DAYS_RU[today_count],
-            ),
+            text=msg,
             reply_markup=keyboard,
         )
         await callback.answer()
@@ -384,10 +397,10 @@ async def process_back_button(
             session=session,
         )
 
-        message = LEXICON["choice_group"]
+        msg = LEXICON["choice_group"].format(faculty_name=user.faculty)
 
         await callback.message.edit_text(
-            text=message.format(faculty_name=user.faculty),
+            text=msg,
             reply_markup=keyboard,
         )
 
@@ -406,10 +419,10 @@ async def process_back_button(
 
         await service.delete_faculty(user_id=callback.from_user.id)
 
-        message = LEXICON["choice_faculty"]
+        msg = LEXICON["choice_faculty"].format(form_education_name=user.form_education)
 
         await callback.message.edit_text(
-            text=message.format(form_education_name=user.form_education),
+            text=msg,
             reply_markup=keyboard,
         )
 

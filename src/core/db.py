@@ -26,19 +26,17 @@ class User(Base):
     form_education: Mapped[str | None]
     faculty: Mapped[str | None]
     group: Mapped[str | None]
+    is_baned: Mapped[bool] = mapped_column(default=False)
 
     def __repr__(self):
-        return f"User {self.id}: user_id={self.user_id}, username={self.username}"
-
-
-class BotMessage(Base):
-    __tablename__ = "bot_messages"
-
-    message_id: Mapped[int] = mapped_column(unique=True, index=True)
-    chat_id: Mapped[int]
-
-    def __repr__(self):
-        return f"BotMessage {self.id}: message_id={self.message_id}, chat_id={self.chat_id}"
+        return (
+            f"👤 Пользователь: {self.username}\n"
+            f"🆔 ID: {self.user_id}\n"
+            f"🎓 Форма обучения: {self.form_education if self.form_education else 'Не выбрано'}\n"
+            f"🏛 Факультет: {self.faculty if self.faculty else 'Не выбрано'}\n"
+            f"👥 Группа: {self.group if self.group else 'Не выбрано'}\n"
+            f"⚠️ Статус: {'Забанен' if self.is_baned else 'Не забанен'}\n\n"
+        )
 
 
 class Subject(Base):

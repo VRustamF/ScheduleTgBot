@@ -1,3 +1,5 @@
+from typing import Any
+
 from aiogram import BaseMiddleware
 from aiogram.client.session.middlewares.base import BaseRequestMiddleware
 from aiogram.methods import SendMessage
@@ -8,7 +10,7 @@ from aiogram.types import Message
 class UserMessageDeleterMiddleware(BaseMiddleware):
     """Мидлварь для удаления сообщений пользователя после обработки"""
 
-    async def __call__(self, handler, event: Message, data):
+    async def __call__(self, handler, event: Message, data) -> Any:
 
         result = await handler(event, data)
 
@@ -26,7 +28,11 @@ class SingleMessageMiddleware(BaseRequestMiddleware):
     def __init__(self, storage):
         self.storage = storage
 
-    async def __call__(self, make_request, bot, method):
+    async def __call__(self, make_request, bot, method) -> Any:
+
+        # Не удаляем сообщения другим пользователям
+        if getattr(method, "skip_single_middleware", False):
+            return await make_request(bot, method)
 
         # Только если создаётся новое сообщение
         if isinstance(method, SendMessage):
